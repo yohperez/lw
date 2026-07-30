@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Optimizadores: de SGD con Momentum a Adam</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<style>
+  :root{
+    --bg:            #0a0e14;
+    --bg-elevated:   #10151d;
+    --bg-elevated-2: #161d27;
+    --text:          #eef1f6;
+    --text-dim:      #8b97ab;
+    --text-faint:    #57637a;
+    --cold:          #22d3c9;   /* valle / bajo costo, extremo frío del viridis */
+    --warm:          #f5c542;   /* Adam / pico, extremo cálido del viridis */
+    --danger:        #ff6b6b;   /* SGD vainilla / gradiente que se pierde */
+    --violet:        #8c7bff;   /* momentum */
+    --line:          rgba(255,255,255,0.09);
+    --slide-w:       13.333in;
+    --slide-h:       7.5in;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background:#000;
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .katex{ font-size:1em; }
+
+  /* ============ VIEWER (pantalla) ============ */
+  #viewer{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#000;
+  }
+
+  .stage{
+    position:relative;
+    aspect-ratio:16/9;
+    width:min(100vw, 177.78vh);
+    height:min(100vh, 56.25vw);
+    background:var(--bg);
+    overflow:hidden;
+    box-shadow:0 40px 120px rgba(0,0,0,0.6);
+  }
+
+  .slide{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    padding:5.2% 6.4%;
+    background:var(--bg);
+    overflow:hidden;
+  }
+  .slide.active{ display:flex; }
+
+  /* ============ Chrome comun de la diapositiva ============ */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72em;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--cold);
+    display:flex; align-items:center; gap:0.6em;
+    margin-bottom:1.1em;
+  }
+  .eyebrow::before{
+    content:"";
+    width:1.6em; height:1px;
+    background:var(--cold);
+    display:inline-block;
+  }
+
+  h1.headline{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:2.6em;
+    line-height:1.08;
+    letter-spacing:-0.01em;
+    margin:0 0 0.32em 0;
+    color:var(--text);
+  }
+  h1.headline .accent{ color:var(--warm); }
+  h1.headline .accent-cold{ color:var(--cold); }
+  h1.headline .accent-danger{ color:var(--danger); }
+
+  .subhead{
+    font-size:1.08em;
+    color:var(--text-dim);
+    max-width:34em;
+    line-height:1.5;
+    margin:0 0 0.6em 0;
+  }
+
+  .slide-number{
+    position:absolute;
+    bottom:5.2%; right:6.4%;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68em;
+    color:var(--text-faint);
+    letter-spacing:0.05em;
+  }
+  .deck-mark{
+    position:absolute;
+    bottom:5.2%; left:6.4%;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68em;
+    color:var(--text-faint);
+    letter-spacing:0.05em;
+  }
+
+  .body-area{ flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; }
+
+  /* ============ Formulas / tarjetas ============ */
+  .formula-card{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-left:3px solid var(--cold);
+    border-radius:6px;
+    padding:0.9em 1.3em;
+    font-size:1.15em;
+    margin:0.5em 0;
+  }
+  .formula-card.warm{ border-left-color:var(--warm); }
+  .formula-card.violet{ border-left-color:var(--violet); }
+  .formula-card.danger{ border-left-color:var(--danger); }
+
+  .formula-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62em;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:0.5em;
+    display:block;
+  }
+
+  .two-col{ display:grid; grid-template-columns:1.05fr 1fr; gap:3.2em; align-items:center; flex:1; min-height:0; }
+  .three-col{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.4em; flex:1; min-height:0; align-items:stretch; }
+
+  ul.check-list{ list-style:none; margin:0.3em 0; padding:0; }
+  ul.check-list li{
+    position:relative;
+    padding-left:1.5em;
+    margin-bottom:0.62em;
+    font-size:1.02em;
+    line-height:1.45;
+    color:var(--text);
+  }
+  ul.check-list li::before{
+    content:"→";
+    position:absolute; left:0; top:0;
+    color:var(--cold);
+    font-family:'JetBrains Mono', monospace;
+  }
+  ul.check-list li b{ color:var(--warm); font-weight:600; }
+  ul.check-list li.danger::before{ color:var(--danger); content:"×"; }
+  ul.check-list li.danger b{ color:var(--danger); }
+
+  .pill{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68em;
+    letter-spacing:0.06em;
+    padding:0.25em 0.7em;
+    border-radius:99px;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+
+  /* ============ Tarjetas de metodo (columnas) ============ */
+  .method-card{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:1.3em 1.3em 1.4em;
+    display:flex; flex-direction:column;
+    min-height:0;
+  }
+  .method-card .m-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:1.18em;
+    margin:0 0 0.15em 0;
+  }
+  .method-card .m-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62em;
+    color:var(--text-faint);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    margin-bottom:0.9em;
+  }
+  .method-card .m-formula{ font-size:0.92em; margin:0.4em 0 0.8em; }
+  .method-card p.m-desc{ font-size:0.86em; color:var(--text-dim); line-height:1.45; margin:0; flex:1; }
+  .method-card.cold{ border-top:3px solid var(--danger); }
+  .method-card.mid{ border-top:3px solid var(--violet); }
+  .method-card.hot{ border-top:3px solid var(--warm); }
+
+  /* ============ Tabla comparativa ============ */
+  table.compare{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.92em;
+  }
+  table.compare th{
+    text-align:left;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68em;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    padding:0.6em 0.8em;
+    border-bottom:1px solid var(--line);
+  }
+  table.compare td{
+    padding:0.72em 0.8em;
+    border-bottom:1px solid var(--line);
+    color:var(--text-dim);
+    vertical-align:top;
+  }
+  table.compare tr td:first-child{
+    color:var(--text);
+    font-weight:600;
+    font-family:'Space Grotesk', sans-serif;
+    white-space:nowrap;
+  }
+  table.compare tr:last-child td{ border-bottom:none; }
+  table.compare td.good{ color:var(--cold); }
+  table.compare td.mid{ color:var(--violet); }
+  table.compare td.best{ color:var(--warm); font-weight:600; }
+
+  /* ============ Motivo decorativo: curvas de nivel ============ */
+  .contour-field{
+    position:absolute; inset:0;
+    opacity:0.55;
+    pointer-events:none;
+  }
+  .contour-field svg{ width:100%; height:100%; }
+
+  .path-trace{
+    fill:none;
+    stroke-width:2.6;
+    stroke-linecap:round;
+    opacity:0.9;
+  }
+
+  /* ============ Slide de portada ============ */
+  .slide.cover{ justify-content:center; align-items:flex-start; }
+  .cover-kicker{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78em;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin-bottom:1.4em;
+    z-index:2;
+  }
+  .cover-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:3.6em;
+    line-height:1.03;
+    letter-spacing:-0.015em;
+    max-width:11em;
+    z-index:2;
+    margin:0;
+  }
+  .cover-title .grad{
+    background:linear-gradient(90deg, var(--danger) 0%, var(--violet) 50%, var(--warm) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .cover-sub{
+    margin-top:0.9em;
+    font-size:1.15em;
+    color:var(--text-dim);
+    max-width:30em;
+    z-index:2;
+    line-height:1.5;
+  }
+  .cover-footer{
+    position:absolute; bottom:6%; left:6.4%; right:6.4%;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    z-index:2;
+  }
+  .cover-legend{ display:flex; gap:1.6em; font-family:'JetBrains Mono', monospace; font-size:0.68em; color:var(--text-dim); }
+  .cover-legend span{ display:flex; align-items:center; gap:0.5em; }
+  .dot{ width:0.7em; height:0.7em; border-radius:50%; display:inline-block; }
+
+  /* ============ Slide de cierre ============ */
+  .slide.closing{ align-items:center; justify-content:center; text-align:center; }
+  .closing .cover-title{ max-width:14em; text-align:center; align-self:center; }
+
+  /* ============ Navegacion (solo pantalla) ============ */
+  .nav-ui{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+  .nav-zone{ position:absolute; top:0; bottom:0; width:12%; pointer-events:auto; cursor:pointer; }
+  .nav-zone.left{ left:0; } .nav-zone.right{ right:0; }
+
+  .nav-bar{
+    position:fixed; bottom:2.2vh; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:0.9em;
+    background:rgba(16,21,29,0.85);
+    border:1px solid var(--line);
+    backdrop-filter:blur(10px);
+    border-radius:99px;
+    padding:0.55em 1.1em;
+    pointer-events:auto;
+    z-index:60;
+  }
+  .nav-btn{
+    width:2em; height:2em; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:1px solid var(--line);
+    color:var(--text-dim); cursor:pointer; font-size:0.95em;
+    transition:all .15s ease;
+  }
+  .nav-btn:hover{ color:var(--text); border-color:var(--cold); }
+  .nav-counter{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72em; color:var(--text-dim); min-width:4.6em; text-align:center;
+  }
+  .progress-track{
+    position:fixed; top:0; left:0; right:0; height:3px;
+    background:transparent; z-index:60;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--danger), var(--violet), var(--warm));
+    transition:width .25s ease;
+  }
+
+  .print-hint{
+    position:fixed; top:1.4vh; right:1.6vh; z-index:60;
+    font-family:'JetBrains Mono', monospace; font-size:0.7em;
+    color:var(--text-faint);
+    border:1px solid var(--line);
+    padding:0.5em 0.8em; border-radius:8px;
+    background:rgba(16,21,29,0.85);
+    backdrop-filter:blur(10px);
+    cursor:pointer;
+  }
+  .print-hint:hover{ color:var(--text); border-color:var(--cold); }
+
+  /* ============ IMPRESION -> PDF 16:9 ============ */
+  @media print{
+    @page{ size:13.333in 7.5in; margin:0; }
+    html,body{ background:#000; height:auto; }
+    #viewer{ position:static; display:block; background:none; height:auto; }
+    .stage{
+      width:var(--slide-w); height:auto;
+      aspect-ratio:auto; box-shadow:none;
+      overflow:visible;
+    }
+    .slide{
+      display:flex !important;
+      position:relative;
+      width:var(--slide-w); height:var(--slide-h);
+      page-break-after:always;
+      break-after:page;
+      page-break-inside:avoid;
+      break-inside:avoid;
+      overflow:hidden;
+    }
+    .slide:last-child{ page-break-after:auto; break-after:auto; }
+    .nav-ui, .nav-bar, .progress-track, .print-hint{ display:none !important; }
+  }
+
+  @media screen and (max-width:700px){
+    .two-col{ grid-template-columns:1fr; gap:1em; }
+    .three-col{ grid-template-columns:1fr; gap:0.8em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<div id="viewer">
+  <div class="stage" id="stage">
+
+    <!-- ============================================================ -->
+    <!-- 1. PORTADA -->
+    <!-- ============================================================ -->
+    <section class="slide cover active">
+      <div class="contour-field" aria-hidden="true">
+        <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" stroke="#ffffff" stroke-opacity="0.06">
+            <ellipse cx="620" cy="230" rx="120" ry="70"/>
+            <ellipse cx="620" cy="230" rx="200" ry="120"/>
+            <ellipse cx="620" cy="230" rx="290" ry="180"/>
+            <ellipse cx="620" cy="230" rx="390" ry="250"/>
+            <ellipse cx="620" cy="230" rx="500" ry="330"/>
+          </g>
+          <path class="path-trace" stroke="#ff6b6b" opacity="0.55" d="M120,60 C260,140 200,260 320,300 C420,330 480,270 620,230"/>
+          <path class="path-trace" stroke="#8c7bff" opacity="0.65" d="M120,60 C240,110 320,190 420,220 C500,244 560,236 620,230"/>
+          <path class="path-trace" stroke="#f5c542" opacity="0.85" d="M120,60 C220,90 360,150 460,190 C540,222 590,228 620,230"/>
+          <circle cx="620" cy="230" r="5" fill="#f5c542"/>
+        </svg>
+      </div>
+      <div class="cover-kicker">Laboratorio de Machine Learning · Módulo III</div>
+      <h1 class="cover-title">Optimizadores:<br>de <span class="grad">SGD con Momentum</span><br>a <span class="grad">Adam</span></h1>
+      <p class="cover-sub">Por qué la red no aprendía, y cómo la regla de actualización de los pesos se convirtió en el ingrediente silencioso que hizo posible el deep learning moderno.</p>
+      <div class="cover-footer">
+        <div class="cover-legend">
+          <span><i class="dot" style="background:#ff6b6b"></i>SGD</span>
+          <span><i class="dot" style="background:#8c7bff"></i>Momentum</span>
+          <span><i class="dot" style="background:#f5c542"></i>Adam</span>
+        </div>
+        <div class="cover-legend"><span>Teoría — complemento del notebook interactivo</span></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 2. QUE ES UN OPTIMIZADOR -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">El problema</div>
+      <h1 class="headline">¿Qué es, en el fondo,<br>un <span class="accent-cold">optimizador</span>?</h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">Una red neuronal aprende ajustando sus pesos <b style="color:var(--text)">θ</b> para minimizar una función de pérdida <b style="color:var(--text)">L(θ)</b>. El optimizador es, literalmente, la regla que decide:</p>
+          <ul class="check-list">
+            <li><b>Dirección</b> — hacia dónde mover cada peso.</li>
+            <li><b>Magnitud</b> — cuánto moverlo en ese paso.</li>
+            <li><b>Memoria</b> — si usa o no información de pasos anteriores.</li>
+          </ul>
+          <div class="formula-card">
+            <span class="formula-label">Regla general de actualización</span>
+            $$ \theta_{t+1} = \theta_t - \eta \cdot (\text{algo derivado del gradiente } g_t) $$
+          </div>
+        </div>
+        <div>
+          <p class="subhead" style="margin-top:0;">Todo lo que distingue a SGD, Momentum y Adam es <b style="color:var(--warm)">qué va dentro de ese paréntesis</b>. La historia de los optimizadores es la historia de ir mejorando esa expresión, paso a paso, para que la red converja más rápido y de forma más estable.</p>
+          <span class="pill">η = learning rate · g = gradiente de la pérdida</span>
+        </div>
+      </div>
+      <div class="slide-number">02</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 3. SGD -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Punto de partida</div>
+      <h1 class="headline">Descenso de gradiente<br><span class="accent-danger">(SGD)</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <div class="formula-card danger">
+            <span class="formula-label">Regla de actualización</span>
+            $$ \theta_{t+1} = \theta_t - \eta \, g_t $$
+          </div>
+          <p class="subhead">En cada paso, SGD mira <b style="color:var(--text)">únicamente el gradiente actual</b> y da un paso proporcional a él, escalado por el learning rate <b style="color:var(--text)">η</b>. No tiene memoria de los pasos anteriores.</p>
+        </div>
+        <div>
+          <ul class="check-list">
+            <li>Simple, barato de calcular y fácil de entender.</li>
+            <li>Funciona bien en superficies de pérdida "bien portadas" (convexas, redondeadas).</li>
+            <li class="danger"><b>Es miope:</b> ignora hacia dónde veníamos moviéndonos.</li>
+            <li class="danger"><b>Un solo learning rate global</b> para los millones de parámetros de la red.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">03</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4. EL LIMITE DE SGD -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">El límite de SGD</div>
+      <h1 class="headline">El dilema del <span class="accent-danger">learning rate</span><br>en un valle angosto</h1>
+      <div class="body-area two-col">
+        <div>
+          <div class="contour-field" style="position:relative; opacity:1; height:100%; min-height:220px;">
+            <svg viewBox="0 0 500 320" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;">
+              <g fill="none" stroke="#22d3c9" stroke-opacity="0.35">
+                <ellipse cx="250" cy="160" rx="60" ry="130" transform="rotate(20 250 160)"/>
+                <ellipse cx="250" cy="160" rx="110" ry="200" transform="rotate(20 250 160)"/>
+                <ellipse cx="250" cy="160" rx="170" ry="270" transform="rotate(20 250 160)"/>
+              </g>
+              <path class="path-trace" stroke="#ff6b6b" stroke-width="2.4" opacity="0.9"
+                d="M120,60 L340,90 L140,130 L330,160 L150,195 L310,225 L180,250 L260,265"/>
+              <circle cx="250" cy="160" r="5" fill="#f5c542"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p class="subhead" style="margin-top:0;">Cuando la pérdida forma un valle angosto y curvo (algo muy común en redes reales), SGD enfrenta un dilema:</p>
+          <ul class="check-list">
+            <li><b>η alto</b> → el paso "rebota" de pared a pared del valle: <b style="color:var(--danger)">zigzagueo</b>, oscilación e incluso divergencia.</li>
+            <li><b>η bajo</b> → el paso avanza tan poco que la red aprende <b style="color:var(--danger)">demasiado lento</b>.</li>
+          </ul>
+          <p class="subhead">No existe un único η que funcione bien en todas las direcciones del espacio de pesos al mismo tiempo.</p>
+        </div>
+      </div>
+      <div class="slide-number">04</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 5. MOMENTUM -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Primera evolución</div>
+      <h1 class="headline">SGD + <span style="color:var(--violet)">Momentum</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <div class="formula-card violet">
+            <span class="formula-label">Regla de actualización</span>
+            $$ v_t = \beta \, v_{t-1} + (1-\beta)\, g_t $$
+            $$ \theta_{t+1} = \theta_t - \eta \, v_t $$
+          </div>
+          <p class="subhead">Idea: en vez de usar el gradiente crudo, acumulamos un <b style="color:var(--text)">promedio móvil</b> <b>v</b> de los gradientes recientes — una especie de "velocidad" o inercia.</p>
+        </div>
+        <div>
+          <p class="subhead" style="margin-top:0;"><b style="color:var(--violet)">Analogía física:</b> una bola pesada rodando por el valle. Su inercia hace que:</p>
+          <ul class="check-list">
+            <li>Las oscilaciones perpendiculares al valle <b>se cancelen</b> (van en direcciones opuestas y se promedian).</li>
+            <li>El avance <b>a lo largo</b> del valle se <b style="color:var(--warm)">refuerce</b> (es consistente entre pasos, se va acumulando).</li>
+          </ul>
+          <p class="subhead">Resultado: converge más rápido y con menos zigzagueo que SGD puro, usando el <b>mismo</b> gradiente crudo.</p>
+        </div>
+      </div>
+      <div class="slide-number">05</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 6. TODAVIA NO ALCANZA -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Todavía no alcanza</div>
+      <h1 class="headline">Un learning rate global<br>sigue sin ser suficiente</h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">Momentum mejora la <b style="color:var(--text)">dirección</b> del paso, pero sigue escalando todos los parámetros con el <b>mismo η</b>. En una red real, distintos parámetros necesitan pasos de tamaño muy distinto:</p>
+          <ul class="check-list">
+            <li>Parámetros con gradientes <b>grandes y frecuentes</b> deberían moverse con pasos <b>chicos</b> (para no divergir).</li>
+            <li>Parámetros con gradientes <b>pequeños y raros</b> deberían moverse con pasos <b>grandes</b> (para no estancarse).</li>
+          </ul>
+        </div>
+        <div>
+          <div class="formula-card">
+            <span class="formula-label">La pregunta que faltaba responder</span>
+            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">¿Podemos hacer que <b style="color:var(--text)">cada parámetro tenga, en la práctica, su propio learning rate</b> — ajustado automáticamente según su propia historia de gradientes?</p>
+          </div>
+          <p class="subhead">Esa pregunta es exactamente lo que responden AdaGrad, RMSProp y, finalmente, Adam.</p>
+        </div>
+      </div>
+      <div class="slide-number">06</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 7. EL PUENTE: ADAGRAD / RMSPROP -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">El puente</div>
+      <h1 class="headline">De AdaGrad a RMSProp:<br>aprendiendo a <span class="accent-cold">adaptar el paso</span></h1>
+      <div class="body-area three-col">
+        <div class="method-card cold">
+          <div class="m-tag">2011</div>
+          <div class="m-title">AdaGrad</div>
+          <div class="m-formula">$$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\textstyle\sum g_t^2}+\epsilon}\, g_t $$</div>
+          <p class="m-desc">Divide el paso por la raíz de la <b>suma acumulada</b> de gradientes al cuadrado. Los parámetros con gradientes históricamente grandes reciben pasos más chicos, y viceversa.</p>
+        </div>
+        <div class="method-card mid">
+          <div class="m-tag">Limitación</div>
+          <div class="m-title">El problema de AdaGrad</div>
+          <div class="m-formula" style="opacity:0.6;">$$ \sum g_t^2 \;\longrightarrow\; \infty $$</div>
+          <p class="m-desc">Como la suma solo <b>crece</b>, el denominador se vuelve enorme con el tiempo y el paso efectivo tiende a <b style="color:var(--danger)">cero</b> — el entrenamiento se frena antes de converger.</p>
+        </div>
+        <div class="method-card hot">
+          <div class="m-tag">2012</div>
+          <div class="m-title">RMSProp</div>
+          <div class="m-formula">$$ v_t = \beta v_{t-1} + (1-\beta) g_t^2 $$</div>
+          <p class="m-desc">Reemplaza la suma acumulada por un <b>promedio móvil</b> de los gradientes al cuadrado. El denominador ya no explota — se adapta a la magnitud <b style="color:var(--warm)">reciente</b> del gradiente.</p>
+        </div>
+      </div>
+      <div class="slide-number">07</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 8. ADAM -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">La síntesis · 2014</div>
+      <h1 class="headline"><span class="accent">Adam</span> = Momentum + RMSProp</h1>
+      <div class="body-area two-col">
+        <div>
+          <div class="formula-card violet">
+            <span class="formula-label">1 — Primer momento (dirección, como Momentum)</span>
+            $$ m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t $$
+          </div>
+          <div class="formula-card warm">
+            <span class="formula-label">2 — Segundo momento (escala, como RMSProp)</span>
+            $$ v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2 $$
+          </div>
+        </div>
+        <div>
+          <div class="formula-card">
+            <span class="formula-label">3 — Corrección de sesgo (m y v arrancan en 0)</span>
+            $$ \hat m_t = \dfrac{m_t}{1-\beta_1^t} \qquad \hat v_t = \dfrac{v_t}{1-\beta_2^t} $$
+          </div>
+          <div class="formula-card" style="border-left-color:var(--text)">
+            <span class="formula-label">4 — Actualización final, por parámetro</span>
+            $$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\hat v_t} + \epsilon}\, \hat m_t $$
+          </div>
+        </div>
+      </div>
+      <div class="slide-number">08</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 9. POR QUE GANO -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Por qué ganó</div>
+      <h1 class="headline">Por qué Adam se volvió<br>el <span class="accent">estándar de la industria</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <ul class="check-list">
+            <li><b>Adapta el paso por parámetro</b> — cada peso tiene, en la práctica, su propio learning rate efectivo.</li>
+            <li><b>Hereda la inercia de Momentum</b> — atraviesa valles angostos sin zigzaguear.</li>
+            <li><b>No explota como AdaGrad</b> — usa promedios móviles, no sumas acumuladas.</li>
+            <li><b>Robusto a la elección de η</b> — converge razonablemente bien incluso sin un ajuste fino de hiperparámetros.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="formula-card" style="border-left-color:var(--warm)">
+            <span class="formula-label">En una frase</span>
+            <p style="margin:0; font-size:1em;">Adam le da a cada parámetro <b style="color:var(--warm)">su propia "prudencia"</b>: avanza rápido donde el terreno lo permite, y con cautela donde el gradiente ha sido errático.</p>
+          </div>
+          <p class="subhead">Por eso es el valor <b>por defecto</b> en la enorme mayoría de papers, frameworks (PyTorch, TensorFlow/Keras) y proyectos de deep learning modernos.</p>
+        </div>
+      </div>
+      <div class="slide-number">09</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 10. VANISHING GRADIENT -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">El otro problema</div>
+      <h1 class="headline">Por qué una red profunda<br><span class="accent-danger">deja de aprender</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">Backpropagation calcula el gradiente de una capa temprana <b style="color:var(--text)">multiplicando</b> las derivadas de todas las capas que vienen después (regla de la cadena):</p>
+          <div class="formula-card danger">
+            <span class="formula-label">Gradiente de una capa temprana (L capas)</span>
+            $$ \frac{\partial \mathcal{L}}{\partial \theta_1} \;\propto\; \prod_{l=1}^{L} \sigma'(z_l) $$
+          </div>
+        </div>
+        <div>
+          <p class="subhead" style="margin-top:0;">La derivada de la sigmoide, <b>σ'(z) = σ(z)(1−σ(z))</b>, tiene un <b style="color:var(--warm)">máximo de solo 0.25</b> y cae cerca de 0 cuando la neurona está saturada.</p>
+          <ul class="check-list">
+            <li class="danger">Multiplicar 4 o 5 números ≤ 0.25 da un producto <b>diminuto</b>.</li>
+            <li class="danger">Las <b>primeras capas</b> reciben una señal de gradiente casi nula.</li>
+            <li class="danger">Quedan casi <b>congeladas</b> en su inicialización aleatoria — la red no aprende representaciones útiles ahí.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">10</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 11. ADAM MITIGA -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">La solución parcial</div>
+      <h1 class="headline">Cómo Adam <span class="accent">mitiga</span><br>(pero no resuelve) el problema</h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">El paso de Adam se normaliza dividiendo por <b style="color:var(--text)">√v̂ₜ</b>, la magnitud típica reciente del gradiente <b>de ese parámetro</b>:</p>
+          <div class="formula-card warm">
+            $$ \Delta\theta \;=\; \dfrac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} $$
+          </div>
+          <p class="subhead">Si un parámetro tiene gradientes consistentemente chicos, <b>v̂ₜ también es chico</b> — y el cociente se reescala hacia un paso razonable, en vez de colapsar a cero como en SGD.</p>
+        </div>
+        <div>
+          <div class="formula-card" style="border-left-color:var(--danger)">
+            <span class="formula-label">Importante</span>
+            <p style="margin:0; font-size:0.95em;">Adam <b style="color:var(--danger)">no cambia la causa raíz</b>: la saturación de la sigmoide sigue produciendo gradientes crudos diminutos.</p>
+          </div>
+          <p class="subhead">Por eso, en la práctica moderna, el vanishing gradient se ataca con una <b>combinación</b> de soluciones:</p>
+          <ul class="check-list">
+            <li><b>ReLU</b> y variantes (derivada no se satura para z&gt;0).</li>
+            <li><b>Inicialización</b> He / Xavier.</li>
+            <li><b>Batch / Layer Normalization.</b></li>
+            <li><b>Conexiones residuales</b> (ResNets).</li>
+            <li>… y un optimizador adaptativo como <b style="color:var(--warm)">Adam</b>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">11</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 12. TABLA COMPARATIVA -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Resumen</div>
+      <h1 class="headline">Tres optimizadores,<br>tres formas de dar el paso</h1>
+      <div class="body-area">
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>Optimizador</th>
+              <th>Usa memoria (dirección)</th>
+              <th>Adapta por parámetro (escala)</th>
+              <th>Sensibilidad a η</th>
+              <th>Vanishing gradient</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SGD</td>
+              <td class="mid">No</td>
+              <td class="mid">No</td>
+              <td class="mid" style="color:var(--danger)">Alta</td>
+              <td style="color:var(--danger)">Sin mitigación</td>
+            </tr>
+            <tr>
+              <td>Momentum</td>
+              <td class="good">Sí</td>
+              <td class="mid">No</td>
+              <td class="mid">Media</td>
+              <td>Mitigación leve</td>
+            </tr>
+            <tr>
+              <td>Adam</td>
+              <td class="good">Sí</td>
+              <td class="best">Sí</td>
+              <td class="best">Baja</td>
+              <td class="good">Mitigación notable</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="slide-number">12</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 13. CONEXION CON EL LABORATORIO -->
+    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">En la práctica</div>
+      <h1 class="headline">Esto es lo que vimos<br>en el notebook interactivo</h1>
+      <div class="body-area two-col">
+        <div>
+          <ul class="check-list">
+            <li>Trayectorias de SGD / Momentum / Adam sobre un valle angosto (función tipo Rosenbrock).</li>
+            <li>Una red neuronal <b>desde cero, con NumPy</b>, entrenada sobre el dataset público <i>Iris</i> (flores — versicolor vs. virginica).</li>
+            <li>La norma del gradiente <b>por capa</b>, capturada en vivo durante el entrenamiento.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="formula-card">
+            <span class="formula-label">Lo que se comprobó empíricamente</span>
+            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">Con <b style="color:var(--danger)">SGD</b> puro, el gradiente de la primera capa quedó <b>órdenes de magnitud</b> por debajo del de la última capa. Con <b style="color:var(--warm)">Adam</b>, esa brecha se redujo y la red convergió más rápido y de forma más estable.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-number">13</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 14. CIERRE -->
+    <!-- ============================================================ -->
+    <section class="slide closing">
+      <div class="contour-field" aria-hidden="true">
+        <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" stroke="#ffffff" stroke-opacity="0.06">
+            <ellipse cx="500" cy="280" rx="120" ry="70"/>
+            <ellipse cx="500" cy="280" rx="220" ry="130"/>
+            <ellipse cx="500" cy="280" rx="330" ry="200"/>
+            <ellipse cx="500" cy="280" rx="450" ry="280"/>
+          </g>
+        </svg>
+      </div>
+      <div class="cover-kicker" style="align-self:center;">Gracias</div>
+      <h1 class="cover-title">De un gradiente que <span class="grad">desaparece</span><br>a un optimizador que <span class="grad">se adapta</span></h1>
+      <p class="cover-sub" style="align-self:center; text-align:center; margin-top:1em;">Preguntas, dudas o el notebook interactivo — todo queda abierto a discusión.</p>
+      <div class="slide-number">14</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+  </div>
+</div>
+
+<div class="nav-ui">
+  <div class="nav-zone left" onclick="goTo(current-1)"></div>
+  <div class="nav-zone right" onclick="goTo(current+1)"></div>
+</div>
+
+<div class="print-hint" onclick="window.print()">⎙ Imprimir / Exportar a PDF</div>
+
+<div class="nav-bar">
+  <button class="nav-btn" onclick="goTo(current-1)" aria-label="Anterior">‹</button>
+  <span class="nav-counter" id="counter">1 / 14</span>
+  <button class="nav-btn" onclick="goTo(current+1)" aria-label="Siguiente">›</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  function goTo(i){
+    if(i < 0 || i >= total) return;
+    slides[current].classList.remove('active');
+    current = i;
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current+1) + ' / ' + total;
+    document.getElementById('progressFill').style.width = ((current+1)/total*100) + '%';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if(['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); goTo(current+1); }
+    if(['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); goTo(current-1); }
+    if(e.key === 'Home') goTo(0);
+    if(e.key === 'End') goTo(total-1);
+  });
+
+  let touchStartX = null;
+  document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+  document.addEventListener('touchend', e => {
+    if(touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if(Math.abs(dx) > 50) goTo(current + (dx < 0 ? 1 : -1));
+    touchStartX = null;
+  });
+
+  document.getElementById('progressFill').style.width = ((current+1)/total*100) + '%';
+
+  window.addEventListener('DOMContentLoaded', () => {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
+    });
+  });
+</script>
+
+</body>
+</html>

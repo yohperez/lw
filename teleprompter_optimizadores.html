@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Teleprompter · Optimizadores: SGD, Momentum y Adam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-0:      #071229;
+    --bg-1:      #0b1d3f;
+    --bg-2:      #123063;
+    --panel:     #10254b;
+    --line:      rgba(255,255,255,0.10);
+    --text:      #eef3fb;
+    --text-dim:  #9db2d6;
+    --text-faint:#5d739e;
+
+    --cold:   #22d3c9;
+    --warm:   #f5c542;
+    --violet: #8c7bff;
+    --danger: #ff6b6b;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; margin:0; overscroll-behavior:none; }
+  body{
+    background:var(--bg-0);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  button:focus-visible{ outline:2px solid var(--cold); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ scroll-behavior:auto !important; } }
+
+  /* ============ Escenario 9:16 ============ */
+  #viewer{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#000;
+  }
+  .stage{
+    position:relative;
+    aspect-ratio:9/16;
+    height:min(100vh, 177.78vw);
+    width:min(100vw, 56.25vh);
+    background:radial-gradient(120% 90% at 50% 0%, var(--bg-2) 0%, var(--bg-1) 46%, var(--bg-0) 100%);
+    overflow:hidden;
+    box-shadow:0 30px 90px rgba(0,0,0,0.55);
+  }
+
+  /* ============ Barra superior ============ */
+  .topbar{
+    position:absolute; top:0; left:0; right:0;
+    padding:calc(1.05rem + var(--safe-top)) 1.15rem 0.75rem;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:0.6rem;
+    z-index:5;
+    background:linear-gradient(180deg, rgba(7,18,41,0.92) 0%, rgba(7,18,41,0.0) 100%);
+  }
+  .topbar .brand{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+  }
+  .topbar .slide-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68rem;
+    color:var(--cold);
+    letter-spacing:0.06em;
+    background:rgba(34,211,201,0.10);
+    border:1px solid rgba(34,211,201,0.28);
+    padding:0.28em 0.62em;
+    border-radius:99px;
+    white-space:nowrap;
+  }
+
+  /* ============ Progreso ============ */
+  .progress-track{
+    position:absolute; top:calc(2.55rem + var(--safe-top)); left:1.15rem; right:1.15rem;
+    height:3px; border-radius:99px; background:rgba(255,255,255,0.08); z-index:5;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--danger), var(--violet), var(--cold), var(--warm));
+    transition:width .25s ease;
+  }
+
+  /* ============ Paginas de notas ============ */
+  .notes-pager{
+    position:absolute; inset:0;
+    display:flex;
+    width:100%; height:100%;
+  }
+  .page{
+    flex:0 0 100%;
+    width:100%; height:100%;
+    display:flex; flex-direction:column;
+    padding:calc(4.6rem + var(--safe-top)) 1.3rem calc(6.4rem + var(--safe-bottom));
+    overflow-y:auto;
+    scroll-behavior:smooth;
+    -webkit-overflow-scrolling:touch;
+  }
+  .page::-webkit-scrollbar{ width:3px; }
+  .page::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.14); border-radius:99px; }
+
+  .page-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.66rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--warm);
+    display:flex; align-items:center; gap:0.55em;
+    margin-bottom:0.5em;
+  }
+  .page-eyebrow::before{ content:""; width:1.3em; height:1px; background:var(--warm); opacity:0.6; }
+
+  .page-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:1.32rem;
+    line-height:1.2;
+    margin:0 0 0.9em 0;
+    color:var(--text);
+  }
+  .page-title .accent{ color:var(--cold); }
+
+  .page-notes{
+    font-size:var(--note-size, 1.14rem);
+    line-height:1.62;
+    color:var(--text);
+    font-weight:500;
+  }
+  .page-notes p{ margin:0 0 1em 0; }
+  .page-notes b{ color:var(--warm); font-weight:700; }
+  .page-notes .beat{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.66rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:1.1em 0 0.35em;
+  }
+  .page-notes .cue{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68rem;
+    color:var(--cold);
+    background:rgba(34,211,201,0.08);
+    border:1px solid rgba(34,211,201,0.22);
+    border-radius:6px;
+    padding:0.18em 0.5em;
+    margin-bottom:0.6em;
+  }
+
+  /* ============ Zonas de toque para pasar pagina ============ */
+  .tap-zone{ position:absolute; top:0; bottom:0; width:24%; z-index:3; }
+  .tap-zone.left{ left:0; } .tap-zone.right{ right:0; }
+
+  /* ============ Barra inferior de navegacion ============ */
+  .bottom-nav{
+    position:absolute; left:0; right:0; bottom:0;
+    padding:0.7rem 1rem calc(0.9rem + var(--safe-bottom));
+    display:flex; flex-direction:column; gap:0.55rem;
+    background:linear-gradient(0deg, rgba(7,18,41,0.96) 40%, rgba(7,18,41,0.0) 100%);
+    z-index:6;
+  }
+
+  .nav-controls{
+    display:flex; align-items:center; justify-content:space-between; gap:0.5rem;
+  }
+  .nav-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:2.7rem; height:2.7rem; border-radius:50%;
+    background:var(--panel); border:1px solid var(--line); color:var(--text);
+    font-size:1.15rem;
+    transition:transform .1s ease, border-color .15s ease;
+  }
+  .nav-btn:active{ transform:scale(0.92); }
+  .nav-btn:hover{ border-color:var(--cold); }
+  .nav-btn:disabled{ opacity:0.3; }
+
+  .nav-center{ display:flex; flex-direction:column; align-items:center; gap:0.15rem; flex:1; }
+  .nav-counter{
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem; color:var(--text-dim);
+  }
+  .nav-dots{ display:flex; gap:0.28rem; }
+  .nav-dot{
+    width:5px; height:5px; border-radius:50%; background:var(--line);
+    transition:background .2s ease, transform .2s ease;
+  }
+  .nav-dot.active{ background:var(--cold); transform:scale(1.5); }
+
+  .aux-controls{
+    display:flex; align-items:center; justify-content:center; gap:0.5rem;
+  }
+  .aux-btn{
+    display:flex; align-items:center; gap:0.4em;
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    border-radius:99px; padding:0.42em 0.85em; font-size:0.72rem;
+    font-family:'JetBrains Mono', monospace; letter-spacing:0.03em;
+  }
+  .aux-btn:hover{ border-color:var(--cold); color:var(--text); }
+  .aux-btn.on{ background:rgba(34,211,201,0.12); border-color:var(--cold); color:var(--cold); }
+  .font-controls{ display:flex; align-items:center; gap:0.35rem; }
+  .font-btn{
+    width:1.8rem; height:1.8rem; border-radius:8px;
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    font-family:'JetBrains Mono', monospace; font-size:0.85rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .font-btn:hover{ border-color:var(--cold); color:var(--text); }
+
+  @media (max-width:340px){
+    .aux-btn span.lbl{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="viewer">
+  <div class="stage" id="stage">
+
+    <div class="topbar">
+      <span class="brand">Teleprompter · Notas al orador</span>
+      <span class="slide-tag" id="slideTag">Diapositiva 01</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="notes-pager" id="pager">
+      <!-- Las paginas se inyectan por JS a partir de NOTES -->
+    </div>
+
+    <div class="tap-zone left" id="zoneLeft" aria-hidden="true"></div>
+    <div class="tap-zone right" id="zoneRight" aria-hidden="true"></div>
+
+    <div class="bottom-nav">
+      <div class="nav-controls">
+        <button class="nav-btn" id="prevBtn" aria-label="Diapositiva anterior">‹</button>
+        <div class="nav-center">
+          <span class="nav-counter mono" id="counterLabel">01 / 14</span>
+          <div class="nav-dots" id="navDots"></div>
+        </div>
+        <button class="nav-btn" id="nextBtn" aria-label="Siguiente diapositiva">›</button>
+      </div>
+      <div class="aux-controls">
+        <button class="aux-btn" id="autoScrollBtn">▶ <span class="lbl">Auto-scroll</span></button>
+        <div class="font-controls">
+          <button class="font-btn" id="fontMinus" aria-label="Reducir texto">A−</button>
+          <button class="font-btn" id="fontPlus" aria-label="Agrandar texto">A+</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     NOTAS AL ORADOR
+     Un bloque por cada diapositiva de la presentación
+     "Optimizadores: de SGD con Momentum a Adam".
+     Los <span class="cue"> son acotaciones para vos, no se leen.
+  ============================================================ */
+  const NOTES = [
+    {
+      tag: "01 · Portada",
+      title: "Arranque",
+      html: `
+        <span class="cue">Pausa. Mirá a la sala antes de hablar.</span>
+        <p>Buenas a todos. Hoy vamos a hablar de algo que suena técnico pero que en realidad es súper intuitivo: <b>cómo aprende una red neuronal</b>, y por qué a veces simplemente... no aprende.</p>
+        <p>El hilo conductor va a ser una pregunta: ¿por qué el optimizador que usa <b>todo el mundo hoy</b>, que se llama Adam, terminó reemplazando al descenso de gradiente clásico?</p>
+        <span class="beat">Transición</span>
+        <p>Vamos a verlo en tres capas: la teoría, la intuición visual, y después un caso práctico con una red entrenada desde cero.</p>
+      `
+    },
+    {
+      tag: "02 · Qué es un optimizador",
+      title: "La idea base",
+      html: `
+        <p>Empecemos por la definición más simple posible. Una red aprende ajustando sus pesos para minimizar una función de pérdida.</p>
+        <p>El <b>optimizador</b> es, literalmente, la regla que decide tres cosas en cada paso: <b>hacia dónde</b> mover los pesos, <b>cuánto</b> moverlos, y si usa o no <b>memoria</b> de los pasos anteriores.</p>
+        <span class="cue">Señalá la fórmula si está en pantalla.</span>
+        <p>Toda la historia que vamos a contar hoy es la historia de ir mejorando esa regla — SGD, Momentum, RMSProp y finalmente Adam son solo variaciones de la misma idea base.</p>
+      `
+    },
+    {
+      tag: "03 · SGD",
+      title: "Descenso de gradiente",
+      html: `
+        <p>El punto de partida es el descenso de gradiente estocástico, SGD. En cada paso mira <b>únicamente el gradiente actual</b> y da un paso proporcional a él.</p>
+        <p>Es simple, barato de calcular, fácil de entender. Funciona bien en superficies de pérdida "bien portadas".</p>
+        <span class="cue">Bajá el ritmo acá, es el concepto ancla de toda la charla.</span>
+        <p>Pero tiene dos límites importantes: es <b>miope</b> — no sabe hacia dónde veníamos moviéndonos — y usa un <b>único learning rate global</b> para millones de parámetros distintos.</p>
+      `
+    },
+    {
+      tag: "04 · El límite de SGD",
+      title: "El valle angosto",
+      html: `
+        <p>Ahora la pregunta interesante: ¿qué pasa cuando la pérdida no es una superficie simple, sino un <b>valle angosto y curvo</b>? Esto es súper común en redes reales.</p>
+        <p>Con un learning rate <b>alto</b>, SGD rebota de pared a pared del valle — zigzaguea, oscila, a veces hasta diverge.</p>
+        <p>Con un learning rate <b>bajo</b>, avanza tan lento que prácticamente no llega a ningún lado en un tiempo razonable.</p>
+        <span class="cue">Podés mostrar el notebook acá si tenés la demo a mano.</span>
+        <p>No existe un único learning rate que funcione bien en todas las direcciones al mismo tiempo. Ese es el problema que Momentum viene a resolver.</p>
+      `
+    },
+    {
+      tag: "05 · Momentum",
+      title: "SGD + Momentum",
+      html: `
+        <p>La primera evolución: en vez de usar el gradiente crudo, acumulamos un <b>promedio móvil</b> de los gradientes recientes. Una especie de velocidad, de inercia.</p>
+        <span class="cue">Analogía física, decila despacio, es la que más se recuerda.</span>
+        <p>Pensalo como una bola pesada rodando por el valle. Las oscilaciones perpendiculares al valle se cancelan entre sí — van en direcciones opuestas y se promedian. El avance a lo largo del valle, en cambio, se refuerza, porque es consistente entre pasos.</p>
+        <p>Resultado: converge más rápido y con menos zigzagueo, usando exactamente el mismo gradiente crudo que SGD.</p>
+      `
+    },
+    {
+      tag: "06 · Todavía no alcanza",
+      title: "El límite de Momentum",
+      html: `
+        <p>Momentum mejora la <b>dirección</b> del paso. Pero seguimos escalando todos los parámetros con el mismo learning rate global.</p>
+        <p>En una red real, distintos parámetros necesitan pasos de tamaño muy distinto: los que tienen gradientes grandes y frecuentes deberían moverse con pasos chicos; los que tienen gradientes pequeños y raros deberían moverse con pasos grandes.</p>
+        <span class="cue">Esta es la pregunta bisagra de toda la charla, dejala resonar un segundo.</span>
+        <p>¿Podemos lograr que cada parámetro tenga, en la práctica, <b>su propio learning rate</b>, ajustado automáticamente según su propia historia de gradientes?</p>
+      `
+    },
+    {
+      tag: "07 · AdaGrad → RMSProp",
+      title: "El puente",
+      html: `
+        <p>La primera respuesta a esa pregunta fue AdaGrad, en 2011: divide el paso por la raíz de la <b>suma acumulada</b> de gradientes al cuadrado.</p>
+        <p>El problema es que esa suma solo crece. Con el tiempo el denominador se vuelve gigante y el paso efectivo tiende a cero — el entrenamiento se frena antes de converger.</p>
+        <span class="cue">Podés contar esto casi como un chiste: "buena idea, mal implementada".</span>
+        <p>RMSProp, un año después, arregla exactamente eso: cambia la suma acumulada por un <b>promedio móvil</b>. El denominador ya no explota, se adapta a la magnitud reciente del gradiente.</p>
+      `
+    },
+    {
+      tag: "08 · Adam",
+      title: "La síntesis",
+      html: `
+        <p>Y acá llegamos al protagonista: Adam, 2014. La idea es simple una vez que tenés las piezas anteriores — es literalmente <b>Momentum + RMSProp</b>.</p>
+        <p>Un primer momento que captura la <b>dirección</b>, como Momentum. Un segundo momento que captura la <b>escala</b> típica del gradiente, como RMSProp. Y una corrección de sesgo porque ambos arrancan en cero.</p>
+        <span class="cue">Si hay fórmulas en pantalla, dales unos segundos de silencio para que la audiencia las lea.</span>
+        <p>El resultado final: cada parámetro recibe un paso normalizado según su propia historia — dirección consistente, magnitud adaptada.</p>
+      `
+    },
+    {
+      tag: "09 · Por qué ganó",
+      title: "El estándar de la industria",
+      html: `
+        <p>¿Por qué Adam terminó siendo el optimizador por defecto en casi todos los papers y frameworks modernos?</p>
+        <p>Adapta el paso por parámetro. Hereda la inercia de Momentum. No explota como AdaGrad. Y es <b>robusto</b> a la elección del learning rate — converge razonablemente bien incluso sin ajuste fino extremo.</p>
+        <span class="cue">Frase de cierre de bloque, decila con calma.</span>
+        <p>Le da a cada parámetro su propia prudencia: avanza rápido donde el terreno lo permite, y con cautela donde el gradiente ha sido errático.</p>
+      `
+    },
+    {
+      tag: "10 · Vanishing gradient",
+      title: "El otro problema",
+      html: `
+        <p>Cambiemos de eje por un momento. Hay un segundo problema clásico en redes profundas: el gradiente que <b>desaparece</b>.</p>
+        <p>Backpropagation calcula el gradiente de una capa temprana multiplicando las derivadas de todas las capas que vienen después — la regla de la cadena.</p>
+        <span class="cue">Si tenés el número a mano, decilo despacio: "cero coma veinticinco".</span>
+        <p>La derivada de la sigmoide tiene un <b>máximo de 0.25</b>. Multiplicar cuatro o cinco números menores o iguales a eso da un producto diminuto. Las primeras capas reciben una señal de gradiente casi nula y quedan casi congeladas en su inicialización aleatoria.</p>
+      `
+    },
+    {
+      tag: "11 · Adam mitiga",
+      title: "Lo que Adam sí y no resuelve",
+      html: `
+        <p>Buena pregunta para la audiencia: ¿Adam soluciona el vanishing gradient?</p>
+        <span class="cue">Dejá un segundo de suspenso antes de responder.</span>
+        <p>Lo <b>mitiga</b>, no lo resuelve. Si un parámetro tiene gradientes consistentemente chicos, Adam reescala el paso hacia un tamaño razonable en vez de dejar que colapse a cero como en SGD puro.</p>
+        <p>Pero la causa raíz sigue ahí: la sigmoide se sigue saturando. Por eso, en la práctica moderna, se combina Adam con ReLU, buena inicialización, batch normalization y conexiones residuales.</p>
+      `
+    },
+    {
+      tag: "12 · Tabla comparativa",
+      title: "Resumen",
+      html: `
+        <p>Antes de pasar a la parte práctica, un resumen rápido de los tres optimizadores que vimos.</p>
+        <p><b>SGD</b>: sin memoria, sin adaptación por parámetro, muy sensible al learning rate.</p>
+        <p><b>Momentum</b>: con memoria de dirección, todavía sin adaptación por parámetro.</p>
+        <p><b>Adam</b>: memoria de dirección <i>y</i> adaptación de escala por parámetro — la combinación gana en casi todos los escenarios prácticos.</p>
+        <span class="cue">Buen momento para preguntas cortas antes de pasar al notebook.</span>
+      `
+    },
+    {
+      tag: "13 · Conexión con el laboratorio",
+      title: "Lo que vimos en el notebook",
+      html: `
+        <p>Todo esto lo comprobamos empíricamente en el laboratorio interactivo: una red neuronal armada desde cero con NumPy, entrenada sobre el dataset público Iris — el clásico de flores, comparando versicolor contra virginica.</p>
+        <p>Medimos la norma del gradiente <b>capa por capa</b>, en vivo, durante el entrenamiento.</p>
+        <span class="cue">Si vas a mostrar el notebook en vivo, este es el momento de cambiar de pantalla.</span>
+        <p>Con SGD puro, el gradiente de la primera capa quedó órdenes de magnitud por debajo del de la última capa. Con Adam, esa brecha se redujo notablemente y la red convergió más rápido y de forma más estable.</p>
+      `
+    },
+    {
+      tag: "14 · Cierre",
+      title: "Cierre y preguntas",
+      html: `
+        <p>Para resumir todo en una frase: pasamos de un gradiente que <b>desaparece</b> a un optimizador que <b>se adapta</b>.</p>
+        <span class="cue">Pausa larga. Sonreí. Abrí la sala a preguntas.</span>
+        <p>Muchas gracias. Quedo abierta a preguntas, y el notebook interactivo queda disponible para que lo exploren con sus propios datos.</p>
+      `
+    }
+  ];
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
+  const pager = document.getElementById("pager");
+  const navDots = document.getElementById("navDots");
+
+  NOTES.forEach((n, i) => {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.id = "page-" + i;
+    page.innerHTML =
+      '<div class="page-eyebrow">' + n.tag + '</div>' +
+      '<h1 class="page-title">' + n.title + '</h1>' +
+      '<div class="page-notes">' + n.html + '</div>';
+    pager.appendChild(page);
+
+    const dot = document.createElement("span");
+    dot.className = "nav-dot";
+    navDots.appendChild(dot);
+  });
+
+  const pages = Array.from(document.querySelectorAll(".page"));
+  const dots = Array.from(document.querySelectorAll(".nav-dot"));
+  const total = pages.length;
+  let current = 0;
+
+  const slideTag = document.getElementById("slideTag");
+  const counterLabel = document.getElementById("counterLabel");
+  const progressFill = document.getElementById("progressFill");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const stage = document.getElementById("stage");
+
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+
+  function render(){
+    pages.forEach((p, i) => { p.style.display = (i === current) ? "flex" : "none"; });
+    dots.forEach((d, i) => d.classList.toggle("active", i === current));
+    slideTag.textContent = "Diapositiva " + pad(current + 1);
+    counterLabel.textContent = pad(current + 1) + " / " + pad(total);
+    progressFill.style.width = ((current + 1) / total * 100) + "%";
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+    stopAutoScroll();
+  }
+
+  function goTo(i){
+    if(i < 0 || i >= total) return;
+    current = i;
+    render();
+  }
+
+  prevBtn.addEventListener("click", () => goTo(current - 1));
+  nextBtn.addEventListener("click", () => goTo(current + 1));
+  document.getElementById("zoneLeft").addEventListener("click", () => goTo(current - 1));
+  document.getElementById("zoneRight").addEventListener("click", () => goTo(current + 1));
+
+  document.addEventListener("keydown", (e) => {
+    if(["ArrowRight","PageDown"].includes(e.key)) goTo(current + 1);
+    if(["ArrowLeft","PageUp"].includes(e.key)) goTo(current - 1);
+    if(e.key === "Home") goTo(0);
+    if(e.key === "End") goTo(total - 1);
+    if(e.key === " "){ e.preventDefault(); toggleAutoScroll(); }
+  });
+
+  /* Swipe vertical / horizontal para pasar de diapositiva */
+  let touchStartX = null, touchStartY = null;
+  stage.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive:true });
+  stage.addEventListener("touchend", (e) => {
+    if(touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)){
+      goTo(current + (dx < 0 ? 1 : -1));
+    }
+    touchStartX = null; touchStartY = null;
+  }, { passive:true });
+
+  /* ============================================================
+     AUTO-SCROLL (util cuando la nota es larga)
+  ============================================================ */
+  const autoScrollBtn = document.getElementById("autoScrollBtn");
+  let scrollRAF = null;
+  let scrolling = false;
+
+  function stepScroll(){
+    const page = pages[current];
+    page.scrollTop += 0.55;
+    if(page.scrollTop + page.clientHeight >= page.scrollHeight - 2){
+      stopAutoScroll();
+      return;
+    }
+    scrollRAF = requestAnimationFrame(stepScroll);
+  }
+  function startAutoScroll(){
+    scrolling = true;
+    autoScrollBtn.classList.add("on");
+    autoScrollBtn.innerHTML = '❚❚ <span class="lbl">Pausar</span>';
+    scrollRAF = requestAnimationFrame(stepScroll);
+  }
+  function stopAutoScroll(){
+    scrolling = false;
+    autoScrollBtn.classList.remove("on");
+    autoScrollBtn.innerHTML = '▶ <span class="lbl">Auto-scroll</span>';
+    if(scrollRAF) cancelAnimationFrame(scrollRAF);
+  }
+  function toggleAutoScroll(){ scrolling ? stopAutoScroll() : startAutoScroll(); }
+  autoScrollBtn.addEventListener("click", toggleAutoScroll);
+
+  /* ============================================================
+     TAMAÑO DE TEXTO
+  ============================================================ */
+  let noteSize = 1.14;
+  function applyFontSize(){
+    document.documentElement.style.setProperty("--note-size", noteSize + "rem");
+  }
+  document.getElementById("fontPlus").addEventListener("click", () => {
+    noteSize = Math.min(1.7, noteSize + 0.08);
+    applyFontSize();
+  });
+  document.getElementById("fontMinus").addEventListener("click", () => {
+    noteSize = Math.max(0.86, noteSize - 0.08);
+    applyFontSize();
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

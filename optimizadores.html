@@ -135,6 +135,28 @@
     display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;
     border-top:1px solid var(--border);font-size:13.5px;
   }
+  .resource-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px;}
+  a.resource-card{
+    display:flex;gap:14px;align-items:flex-start;text-decoration:none;
+    background:var(--card-2);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px;transition:border-color .15s ease, transform .15s ease;
+  }
+  a.resource-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  a.resource-card .ic{
+    flex-shrink:0;width:38px;height:38px;border-radius:9px;background:rgba(251,113,133,0.1);
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  a.resource-card .body h4{margin:0 0 4px;font-size:14.5px;color:var(--text);}
+  a.resource-card .body p{margin:0;font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+  a.resource-card .body .kind{
+    display:inline-block;font-size:10px;color:var(--accent);text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:4px;font-weight:700;
+  }
+  a.resource-card.quiz{
+    grid-column:1 / -1;background:linear-gradient(90deg, rgba(251,113,133,0.08), rgba(167,139,250,0.06));
+    border-color:var(--accent-soft);
+  }
+  @media (max-width:700px){ .resource-grid{grid-template-columns:1fr;} }
   @media (max-width:900px){
     .burger{display:block;}
     .topbar .crumbs{display:none;}
@@ -180,6 +202,8 @@
     <a href="#comparacion-final">Comparación final y cuál elegir</a>
     <a href="#lr-scheduling">Learning rate scheduling y warmup</a>
     <a href="#codigo-pytorch">En código: cómo se ven en PyTorch/Keras</a>
+    <h3>Material complementario</h3>
+    <a href="#recursos">Presentación, notebooks, retos y quiz</a>
   </nav>
   <main>
     <div class="hero">
@@ -392,6 +416,65 @@ optimizer = optim.<span class="fn">AdamW</span>(model.parameters(), lr=<span>1e-
 <span class="c1"># Keras</span><br>
 model.<span class="fn">compile</span>(optimizer=<span>'adam'</span>, loss=<span>'categorical_crossentropy'</span>)<br>
 model.<span class="fn">compile</span>(optimizer=tf.keras.optimizers.<span class="fn">SGD</span>(learning_rate=<span>0.01</span>, momentum=<span>0.9</span>))
+        </div>
+      </div>
+    </section>
+
+    <section class="mod">
+      <h2><span class="n">5</span> Material complementario</h2>
+
+      <div class="concept" id="recursos">
+        <h3>Presentación, notebooks, retos y quiz</h3>
+        <p class="dim">Todo el material que acompaña esta píldora: la presentación de teoría en dos formatos, el teleprompter para exponerla, los dos notebooks de la sesión práctica y un quiz de autoevaluación.</p>
+        <div class="resource-grid">
+          <a class="resource-card" href="optimizadores_presentacion.html">
+            <span class="ic">🎞️</span>
+            <div class="body">
+              <span class="kind">Slides · HTML</span>
+              <h4>Presentación: de SGD con Momentum a Adam</h4>
+              <p>14 slides con la teoría completa — la misma narrativa de esta página en formato deck, lista para exponer.</p>
+            </div>
+          </a>
+          <a class="resource-card" href="optimizadores_presentacion.pdf">
+            <span class="ic">📄</span>
+            <div class="body">
+              <span class="kind">PDF</span>
+              <h4>Presentación en PDF</h4>
+              <p>La misma presentación exportada a PDF, para imprimir o compartir sin depender del navegador.</p>
+            </div>
+          </a>
+          <a class="resource-card" href="teleprompter_optimizadores.html">
+            <span class="ic">🎙️</span>
+            <div class="body">
+              <span class="kind">Teleprompter</span>
+              <h4>Guion para exponer la presentación</h4>
+              <p>Texto de apoyo slide por slide, pensado para presentar la teoría en vivo frente al grupo.</p>
+            </div>
+          </a>
+          <a class="resource-card" href="Optimizadores_SGD_Momentum_Adam.ipynb">
+            <span class="ic">📓</span>
+            <div class="body">
+              <span class="kind">Notebook</span>
+              <h4>Optimizadores_SGD_Momentum_Adam.ipynb</h4>
+              <p>Notebook interactivo: trayectorias de SGD/Momentum/Adam en un valle angosto y una red desde cero con NumPy sobre Iris.</p>
+            </div>
+          </a>
+          <a class="resource-card" href="4_Retos_Optimizadores.ipynb">
+            <span class="ic">🧩</span>
+            <div class="body">
+              <span class="kind">Notebook · Retos</span>
+              <h4>4_Retos_Optimizadores.ipynb</h4>
+              <p>Cuatro retos prácticos para implementar y comparar optimizadores con tus propias manos.</p>
+            </div>
+          </a>
+          <a class="resource-card quiz" href="https://yohperez.github.io/quiz_adam/" target="_blank" rel="noopener noreferrer">
+            <span class="ic">✅</span>
+            <div class="body">
+              <span class="kind">Quiz · Autoevaluación</span>
+              <h4>Quiz · Optimizadores en Deep Learning</h4>
+              <p>Pon a prueba lo aprendido en esta píldora con un quiz interactivo sobre SGD, Momentum y Adam.</p>
+            </div>
+          </a>
         </div>
       </div>
     </section>
