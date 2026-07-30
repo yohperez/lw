@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optimizadores: de SGD a Adam — Píldoras</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0a0e1a;
+    --bg-1:#0f1830;
+    --card:#141f38;
+    --card-2:#182645;
+    --border:#24365c;
+    --text:#dfe6f5;
+    --text-dim:#8fa1c7;
+    --accent:#fb7185;
+    --accent-soft:#7a2f3c;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--bg-0),var(--bg-1) 300px, var(--bg-0) 100%);
+    color:var(--text);
+    min-height:100vh;
+  }
+  a{color:var(--accent);}
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;gap:12px;
+    padding:10px 18px;
+    background:rgba(10,14,26,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar .home{
+    font-size:14px;color:var(--text-dim);text-decoration:none;
+    padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  }
+  .topbar .home:hover{color:var(--text);border-color:var(--accent);}
+  .topbar .crumbs{font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .topbar .crumbs a{color:var(--text-dim);text-decoration:none;}
+  .topbar .crumbs a:hover{color:var(--text);}
+  .topbar .crumbs .sep{color:var(--border);}
+  .topbar .crumbs .current{color:var(--text);font-weight:600;}
+  .burger{
+    display:none;margin-left:auto;background:none;border:1px solid var(--border);
+    color:var(--text);font-size:18px;padding:6px 10px;border-radius:8px;cursor:pointer;
+  }
+  .layout{display:flex;max-width:1320px;margin:0 auto;}
+  nav.sidebar{
+    width:280px;flex-shrink:0;
+    height:calc(100vh - 49px);position:sticky;top:49px;
+    overflow-y:auto;padding:22px 14px 40px 22px;
+    border-right:1px solid var(--border);
+  }
+  nav.sidebar h3{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.08em;
+    color:var(--text-dim);margin:20px 0 8px;
+  }
+  nav.sidebar h3:first-child{margin-top:0;}
+  nav.sidebar a{
+    display:block;font-size:13.5px;color:var(--text-dim);text-decoration:none;
+    padding:5px 8px;border-radius:6px;line-height:1.35;
+  }
+  nav.sidebar a:hover{color:var(--text);background:var(--card);}
+  nav.sidebar a.active{color:var(--accent);background:var(--card-2);font-weight:600;}
+  main{flex:1;min-width:0;padding:36px 40px 100px;}
+  .hero{margin-bottom:36px;}
+  .hero .kicker{
+    display:inline-block;color:var(--accent);font-size:12.5px;font-weight:700;
+    letter-spacing:0.09em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .hero h1{font-size:32px;margin:0 0 12px;line-height:1.2;}
+  .hero p{color:var(--text-dim);font-size:15.5px;max-width:720px;line-height:1.6;}
+  section.mod{margin:48px 0 8px;}
+  section.mod > h2{
+    font-size:22px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:22px;
+    display:flex;align-items:center;gap:10px;
+  }
+  section.mod > h2 .n{
+    background:var(--accent);color:#0a0e1a;font-size:13px;font-weight:800;
+    width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .concept{
+    scroll-margin-top:64px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:22px 24px;margin-bottom:20px;
+  }
+  .concept h3{margin:0 0 10px;font-size:18px;color:var(--text);}
+  .concept .badge{
+    display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--accent-soft);
+    background:rgba(255,255,255,0.03);border-radius:20px;padding:2px 10px;margin-bottom:10px;
+  }
+  .concept p{margin:0 0 10px;color:var(--text);font-size:14.5px;line-height:1.65;}
+  .concept p.dim{color:var(--text-dim);}
+  .concept .visual{
+    margin:16px 0;padding:16px;background:var(--card-2);border:1px solid var(--border);
+    border-radius:10px;display:flex;justify-content:center;overflow-x:auto;
+  }
+  .concept .visual svg{max-width:100%;height:auto;}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+  .compare.thirds{grid-template-columns:1fr 1fr 1fr;}
+  .compare .col{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .compare .col h4{margin:0 0 8px;font-size:13.5px;color:var(--accent);}
+  .compare .col p{font-size:13.5px;margin:0;color:var(--text-dim);line-height:1.55;}
+  table.cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  table.cmp th,table.cmp td{border:1px solid var(--border);padding:8px 12px;text-align:left;}
+  table.cmp th{background:var(--card-2);color:var(--accent);}
+  table.cmp td{color:var(--text-dim);}
+  .katex-block{overflow-x:auto;padding:6px 0;}
+  .formula-card{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:14px 0;}
+  .formula-card .label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tag{font-size:11px;color:var(--text-dim);background:var(--card-2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+  code, .code-block{font-family:'Cascadia Code','Fira Code',Consolas,monospace;}
+  .code-block{
+    background:#0d1428;border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;font-size:13px;color:#c8d4ec;overflow-x:auto;margin:14px 0;line-height:1.6;
+  }
+  .code-block .c1{color:#6b7fa8;}
+  .code-block .kw{color:#fb7185;}
+  .code-block .fn{color:#4fd1c5;}
+  .pill-note{
+    display:flex;gap:10px;align-items:flex-start;background:rgba(251,113,133,0.06);
+    border:1px solid var(--accent-soft);border-radius:10px;padding:12px 16px;margin:16px 0;
+  }
+  .pill-note .ic{color:var(--accent);font-size:16px;line-height:1.3;}
+  .pill-note p{margin:0;font-size:13.5px;color:var(--text-dim);}
+  .footnav{
+    display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;
+    border-top:1px solid var(--border);font-size:13.5px;
+  }
+  @media (max-width:900px){
+    .burger{display:block;}
+    .topbar .crumbs{display:none;}
+    nav.sidebar{
+      position:fixed;left:0;top:49px;bottom:0;background:var(--bg-0);
+      width:78vw;max-width:320px;transform:translateX(-105%);transition:transform .25s ease;
+      z-index:60;box-shadow:8px 0 24px rgba(0,0,0,0.4);
+    }
+    nav.sidebar.open{transform:translateX(0);}
+    main{padding:26px 18px 90px;}
+    .hero h1{font-size:26px;}
+    .compare, .compare.thirds{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="home" href="index.html">&larr; Inicio</a>
+  <div class="crumbs">
+    <a href="index.html">Píldoras</a>
+    <span class="sep">/</span>
+    <a href="modulo4.html">Módulo 4</a>
+    <span class="sep">/</span>
+    <span class="current">Optimizadores</span>
+  </div>
+  <button class="burger" id="burgerBtn">☰</button>
+</div>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h3>Descenso de gradiente: las bases</h3>
+    <a href="#gd-variantes">Batch, Mini-batch y Stochastic Gradient Descent</a>
+    <a href="#sgd-vanilla">SGD "vanilla": la actualización más simple</a>
+    <a href="#problema-sgd">El problema: zigzag, mínimos locales y ruido</a>
+    <h3>Añadiendo memoria: momentum</h3>
+    <a href="#sgd-momentum">SGD + Momentum</a>
+    <a href="#nesterov">Nesterov Accelerated Gradient (NAG)</a>
+    <h3>Tasas de aprendizaje adaptativas</h3>
+    <a href="#adagrad">Adagrad</a>
+    <a href="#rmsprop">RMSprop</a>
+    <a href="#adam">Adam (Adaptive Moment Estimation)</a>
+    <a href="#adamw">AdamW: el Adam moderno</a>
+    <h3>Llevándolo a la práctica</h3>
+    <a href="#comparacion-final">Comparación final y cuál elegir</a>
+    <a href="#lr-scheduling">Learning rate scheduling y warmup</a>
+    <a href="#codigo-pytorch">En código: cómo se ven en PyTorch/Keras</a>
+  </nav>
+  <main>
+    <div class="hero">
+      <span class="kicker">Módulo 4 · Deep Learning</span>
+      <h1>Optimizadores: de SGD a Adam</h1>
+      <p>Esta píldora profundiza el concepto de "Optimizadores" visto en el Módulo 4: cómo un gradient descent simple evolucionó, paso a paso, hasta convertirse en Adam — el optimizador que hoy se usa por defecto en casi cualquier red neuronal.</p>
+    </div>
+
+    <section class="mod">
+      <h2><span class="n">1</span> Descenso de gradiente: las bases</h2>
+
+      <div class="concept" id="gd-variantes">
+        <h3>Batch, Mini-batch y Stochastic Gradient Descent</h3>
+        <p>Antes de hablar de "optimizadores" hay que separar dos cosas: la <strong>dirección</strong> del ajuste (el gradiente de la función de pérdida) y <strong>cuántos datos</strong> se usan para calcular esa dirección en cada paso. Esa segunda decisión define tres variantes:</p>
+        <div class="compare thirds">
+          <div class="col"><h4>Batch GD</h4><p>Usa <strong>todo</strong> el dataset para calcular el gradiente antes de dar un solo paso. Muy estable, pero lento y pesado en memoria con datasets grandes.</p></div>
+          <div class="col"><h4>Stochastic GD</h4><p>Usa <strong>un solo</strong> ejemplo a la vez. Pasos rápidos y ruidosos, con actualizaciones muy frecuentes que ayudan a escapar mínimos locales poco profundos.</p></div>
+          <div class="col"><h4>Mini-batch GD</h4><p>El punto medio real usado en la práctica: un lote pequeño (32, 64, 128 ejemplos). Balancea estabilidad y velocidad, y aprovecha el paralelismo de la GPU.</p></div>
+        </div>
+        <p class="dim">En la práctica, cuando alguien dice "SGD" en un framework como PyTorch o Keras casi siempre se refiere a mini-batch gradient descent — el nombre "stochastic" se mantuvo por herencia histórica.</p>
+      </div>
+
+      <div class="concept" id="sgd-vanilla">
+        <h3>SGD "vanilla": la actualización más simple</h3>
+        <p>La idea de SGD es directa: en cada paso, mover los parámetros un poco en la dirección opuesta al gradiente de la función de pérdida (porque el gradiente apunta hacia donde la pérdida <em>aumenta</em>, así que se avanza hacia el lado contrario).</p>
+        <div class="formula-card">
+          <div class="label">Regla de actualización</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - \eta \, \nabla_\theta J(\theta_t)\)</div>
+        </div>
+        <p class="dim">Donde \(\theta\) son los pesos, \(\eta\) (eta) es la tasa de aprendizaje (learning rate) y \(\nabla_\theta J(\theta_t)\) es el gradiente de la pérdida respecto a los pesos, calculado sobre el mini-batch actual.</p>
+        <div class="visual">
+          <svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+            <text x="20" y="20" fill="var(--text-dim)">η pequeño</text>
+            <circle cx="30" cy="120" r="4" fill="var(--accent)"/>
+            <path d="M30,120 L55,110 L75,102 L92,96 L107,91 L120,87" stroke="var(--accent)" stroke-width="1.6" fill="none"/>
+            <circle cx="120" cy="87" r="3" fill="var(--accent)"/>
+            <text x="140" y="20" fill="var(--text-dim)">η adecuado</text>
+            <circle cx="150" cy="120" r="4" fill="var(--accent)"/>
+            <path d="M150,120 L180,95 L195,90" stroke="var(--accent)" stroke-width="1.6" fill="none"/>
+            <circle cx="195" cy="90" r="3" fill="var(--accent)"/>
+            <text x="235" y="20" fill="var(--text-dim)">η muy grande</text>
+            <circle cx="240" cy="120" r="4" fill="var(--accent)"/>
+            <path d="M240,120 L300,60 L215,50 L290,95" stroke="var(--accent)" stroke-width="1.6" fill="none"/>
+            <text x="255" y="140" fill="var(--text-dim)" font-size="10">diverge / oscila</text>
+          </svg>
+        </div>
+        <div class="tag-row">
+          <span class="tag">η controla el tamaño del paso</span>
+          <span class="tag">Muy chico → converge lento</span>
+          <span class="tag">Muy grande → diverge</span>
+        </div>
+      </div>
+
+      <div class="concept" id="problema-sgd">
+        <h3>El problema: zigzag, mínimos locales y ruido</h3>
+        <p>SGD vanilla tiene tres limitaciones que motivaron todo lo que viene después:</p>
+        <table class="cmp">
+          <tr><th>Problema</th><th>Por qué ocurre</th></tr>
+          <tr><td>Zigzagueo</td><td>En superficies de error "alargadas" (mucha más curvatura en una dirección que en otra), el gradiente apunta perpendicular a las paredes del valle en vez de directo al mínimo, generando un camino en zigzag.</td></tr>
+          <tr><td>Mínimos locales y puntos de silla</td><td>Con un gradiente puro, el optimizador puede quedar "atrapado" donde el gradiente es cercano a cero sin haber llegado al mejor mínimo global.</td></tr>
+          <tr><td>Learning rate único y fijo</td><td>Un mismo \(\eta\) para todos los parámetros no tiene sentido cuando distintos pesos necesitan pasos de tamaños muy distintos según su escala o frecuencia de actualización.</td></tr>
+        </table>
+        <div class="pill-note">
+          <span class="ic">💡</span>
+          <p>Toda la historia de los optimizadores modernos es, en el fondo, la historia de resolver estos tres problemas: primero con <strong>momentum</strong> (zigzag), después con <strong>tasas adaptativas</strong> (learning rate por parámetro).</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mod">
+      <h2><span class="n">2</span> Añadiendo memoria: momentum</h2>
+
+      <div class="concept" id="sgd-momentum">
+        <h3>SGD + Momentum</h3>
+        <p>La intuición es física: en vez de que cada paso dependa solo del gradiente actual, se acumula una "velocidad" que arrastra la inercia de los gradientes anteriores — como una bola rodando cuesta abajo que va ganando impulso en la dirección consistente y se amortigua en las direcciones que cambian de signo seguido (el zigzag).</p>
+        <div class="formula-card">
+          <div class="label">Regla de actualización</div>
+          <div class="katex-block">\(v_t = \gamma v_{t-1} + \eta \, \nabla_\theta J(\theta_t)\)</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - v_t\)</div>
+        </div>
+        <p class="dim">\(\gamma\) (típicamente ≈0.9) controla cuánta "inercia" del paso anterior se conserva. En direcciones donde el gradiente cambia de signo constantemente, esos términos se cancelan y el zigzag se amortigua; en direcciones consistentes, la velocidad se acumula y acelera la convergencia.</p>
+        <div class="visual">
+          <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="2">
+            <ellipse cx="150" cy="65" rx="130" ry="55" stroke="var(--border)"/>
+            <ellipse cx="150" cy="65" rx="80" ry="34" stroke="var(--border)"/>
+            <path d="M270,20 L230,45 L150,55 L90,60 L150,65" stroke="var(--text-dim)" stroke-dasharray="3 2"/>
+            <path d="M270,20 Q180,90 150,65" stroke="var(--accent)"/>
+            <circle cx="150" cy="65" r="4" fill="var(--accent)"/>
+            <text x="270" y="12" fill="var(--text-dim)" font-size="10" text-anchor="middle">SGD (zigzag)</text>
+            <text x="205" y="95" fill="var(--accent)" font-size="10" text-anchor="middle">SGD + Momentum</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="concept" id="nesterov">
+        <h3>Nesterov Accelerated Gradient (NAG)</h3>
+        <p>Una mejora sutil pero efectiva sobre momentum: en vez de calcular el gradiente en la posición actual, primero se da un "vistazo hacia adelante" en la dirección que marca la velocidad acumulada, y el gradiente se calcula ahí. Es como frenar anticipadamente al ver que la inercia te está llevando cuesta arriba de nuevo, en vez de notarlo un paso tarde.</p>
+        <div class="formula-card">
+          <div class="label">Regla de actualización</div>
+          <div class="katex-block">\(v_t = \gamma v_{t-1} + \eta \, \nabla_\theta J(\theta_t - \gamma v_{t-1})\)</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - v_t\)</div>
+        </div>
+        <p class="dim">La diferencia con momentum clásico está en dónde se evalúa el gradiente: \(\theta_t - \gamma v_{t-1}\) (la posición "proyectada") en vez de \(\theta_t\).</p>
+      </div>
+    </section>
+
+    <section class="mod">
+      <h2><span class="n">3</span> Tasas de aprendizaje adaptativas</h2>
+
+      <div class="concept" id="adagrad">
+        <h3>Adagrad</h3>
+        <p>El primer optimizador en resolver el problema del "learning rate único": le da a cada parámetro su propia tasa de aprendizaje, que se hace más pequeña para los parámetros que se han actualizado mucho (acumulan gradientes grandes) y se mantiene más grande para los que casi no se tocan — útil, por ejemplo, con features poco frecuentes en NLP.</p>
+        <div class="formula-card">
+          <div class="label">Regla de actualización (por parámetro i)</div>
+          <div class="katex-block">\(\theta_{t+1,i} = \theta_{t,i} - \dfrac{\eta}{\sqrt{G_{t,ii}+\epsilon}} \, g_{t,i}\)</div>
+        </div>
+        <p class="dim">\(G_{t,ii}\) es la suma acumulada de los cuadrados de todos los gradientes pasados de ese parámetro; \(\epsilon\) es una constante pequeña que evita dividir entre cero.</p>
+        <div class="pill-note">
+          <span class="ic">⚠️</span>
+          <p>El problema de Adagrad: como \(G_{t,ii}\) solo crece, el learning rate efectivo se va reduciendo monótonamente y puede volverse tan pequeño que el entrenamiento prácticamente se detiene antes de converger.</p>
+        </div>
+      </div>
+
+      <div class="concept" id="rmsprop">
+        <h3>RMSprop</h3>
+        <p>La solución al problema de Adagrad: en vez de acumular <em>todos</em> los gradientes pasados sin límite, usa un promedio móvil exponencial que "olvida" gradientes muy antiguos. Así el learning rate efectivo puede volver a crecer si el terreno se vuelve más plano, en vez de quedar atrapado en un valor cada vez más chico.</p>
+        <div class="formula-card">
+          <div class="label">Regla de actualización</div>
+          <div class="katex-block">\(E[g^2]_t = \beta \, E[g^2]_{t-1} + (1-\beta)\, g_t^2\)</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{E[g^2]_t+\epsilon}}\, g_t\)</div>
+        </div>
+        <p class="dim">\(\beta\) (típicamente ≈0.9) controla qué tan rápido "olvida" el promedio los gradientes antiguos, igual que el \(\gamma\) de momentum pero aplicado al cuadrado del gradiente en vez de al gradiente mismo.</p>
+      </div>
+
+      <div class="concept" id="adam">
+        <h3>Adam (Adaptive Moment Estimation)</h3>
+        <p>Adam combina las dos ideas anteriores en un solo optimizador: lleva un promedio móvil del gradiente (como momentum, el "primer momento") <strong>y</strong> un promedio móvil del gradiente al cuadrado (como RMSprop, el "segundo momento"), y además corrige el sesgo que ambos promedios tienen al inicio del entrenamiento (cuando arrancan en cero).</p>
+        <div class="formula-card">
+          <div class="label">Momentos estimados</div>
+          <div class="katex-block">\(m_t = \beta_1 m_{t-1} + (1-\beta_1)\, g_t\)</div>
+          <div class="katex-block">\(v_t = \beta_2 v_{t-1} + (1-\beta_2)\, g_t^2\)</div>
+        </div>
+        <div class="formula-card">
+          <div class="label">Corrección de sesgo</div>
+          <div class="katex-block">\(\hat{m}_t = \dfrac{m_t}{1-\beta_1^t} \qquad \hat{v}_t = \dfrac{v_t}{1-\beta_2^t}\)</div>
+        </div>
+        <div class="formula-card">
+          <div class="label">Regla de actualización final</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\hat{v}_t}+\epsilon}\, \hat{m}_t\)</div>
+        </div>
+        <p class="dim">Valores por defecto que casi nunca hay que tocar: \(\beta_1 = 0.9\), \(\beta_2 = 0.999\), \(\epsilon = 10^{-8}\). Por eso Adam es tan popular: converge rápido y funciona bien "out of the box" en la mayoría de los problemas, sin necesitar mucho ajuste fino de hiperparámetros.</p>
+        <div class="tag-row">
+          <span class="tag">Momentum → 1er momento (dirección)</span>
+          <span class="tag">RMSprop → 2do momento (escala)</span>
+          <span class="tag">Corrección de sesgo inicial</span>
+        </div>
+      </div>
+
+      <div class="concept" id="adamw">
+        <h3>AdamW: el Adam moderno</h3>
+        <p>Una corrección importante descubierta años después de Adam original: cuando se combina Adam con weight decay (regularización L2) de la forma tradicional, la regularización interactúa mal con las tasas adaptativas y pierde efectividad. AdamW <strong>desacopla</strong> el weight decay del resto de la actualización, aplicándolo directamente sobre los pesos en vez de mezclarlo dentro del gradiente adaptativo.</p>
+        <div class="formula-card">
+          <div class="label">Diferencia clave frente a Adam + L2</div>
+          <div class="katex-block">\(\theta_{t+1} = \theta_t - \eta \left( \dfrac{\hat{m}_t}{\sqrt{\hat{v}_t}+\epsilon} + \lambda \, \theta_t \right)\)</div>
+        </div>
+        <p class="dim">\(\lambda\) es el coeficiente de weight decay, aplicado directamente y no absorbido dentro del promedio adaptativo de gradientes. Hoy AdamW es el optimizador por defecto al entrenar transformers y la mayoría de modelos grandes modernos.</p>
+      </div>
+    </section>
+
+    <section class="mod">
+      <h2><span class="n">4</span> Llevándolo a la práctica</h2>
+
+      <div class="concept" id="comparacion-final">
+        <h3>Comparación final y cuál elegir</h3>
+        <table class="cmp">
+          <tr><th>Optimizador</th><th>Idea central</th><th>Cuándo usarlo</th></tr>
+          <tr><td>SGD (vanilla)</td><td>Solo el gradiente actual, sin memoria.</td><td>Casos simples, o como base para entender el resto.</td></tr>
+          <tr><td>SGD + Momentum</td><td>Acumula inercia para suavizar el zigzag.</td><td>Visión por computadora clásica (ResNet, etc.), suele generalizar muy bien con ajuste fino.</td></tr>
+          <tr><td>Adagrad</td><td>Learning rate por parámetro, decrece sin límite.</td><td>Datos muy dispersos (sparse), entrenamientos cortos.</td></tr>
+          <tr><td>RMSprop</td><td>Como Adagrad pero con memoria limitada (promedio móvil).</td><td>RNNs y problemas no estacionarios.</td></tr>
+          <tr><td>Adam</td><td>Momentum + RMSprop, con corrección de sesgo.</td><td>Punto de partida por defecto para casi cualquier red.</td></tr>
+          <tr><td>AdamW</td><td>Adam con weight decay desacoplado.</td><td>Transformers y modelos grandes modernos (estándar actual).</td></tr>
+        </table>
+        <div class="pill-note">
+          <span class="ic">🎯</span>
+          <p>Regla práctica: si no sabes por dónde empezar, arranca con <strong>Adam o AdamW</strong>. Solo vale la pena volver a SGD + Momentum cuando ya tienes un pipeline maduro y estás optimizando ese último porcentaje de generalización.</p>
+        </div>
+      </div>
+
+      <div class="concept" id="lr-scheduling">
+        <h3>Learning rate scheduling y warmup</h3>
+        <p>Ningún optimizador reemplaza la necesidad de ajustar bien el learning rate a lo largo del entrenamiento. Dos técnicas se combinan casi siempre con el optimizador elegido:</p>
+        <div class="compare">
+          <div class="col"><h4>LR Scheduling</h4><p>Reduce \(\eta\) gradualmente conforme avanza el entrenamiento (por pasos, coseno, exponencial), para dar pasos grandes al inicio y pasos finos cerca del mínimo.</p></div>
+          <div class="col"><h4>Warmup</h4><p>Empieza con un \(\eta\) muy bajo y lo sube gradualmente los primeros pasos, evitando actualizaciones inestables cuando los pesos todavía están casi aleatorios — muy usado al entrenar transformers.</p></div>
+        </div>
+      </div>
+
+      <div class="concept" id="codigo-pytorch">
+        <h3>En código: cómo se ven en PyTorch/Keras</h3>
+        <p>En la práctica, elegir un optimizador es literalmente una línea de código; la teoría de arriba es lo que decide qué línea escribir.</p>
+        <div class="code-block">
+<span class="c1"># PyTorch</span><br>
+<span class="kw">import</span> torch.optim <span class="kw">as</span> optim<br><br>
+optimizer = optim.<span class="fn">SGD</span>(model.parameters(), lr=<span>0.01</span>, momentum=<span>0.9</span>)<br>
+optimizer = optim.<span class="fn">Adam</span>(model.parameters(), lr=<span>1e-3</span>, betas=(<span>0.9</span>, <span>0.999</span>))<br>
+optimizer = optim.<span class="fn">AdamW</span>(model.parameters(), lr=<span>1e-3</span>, weight_decay=<span>0.01</span>)
+        </div>
+        <div class="code-block">
+<span class="c1"># Keras</span><br>
+model.<span class="fn">compile</span>(optimizer=<span>'adam'</span>, loss=<span>'categorical_crossentropy'</span>)<br>
+model.<span class="fn">compile</span>(optimizer=tf.keras.optimizers.<span class="fn">SGD</span>(learning_rate=<span>0.01</span>, momentum=<span>0.9</span>))
+        </div>
+      </div>
+    </section>
+
+    <div class="footnav">
+      <a href="modulo4.html#optimizadores">&larr; Volver a Módulo 4: Optimizadores</a>
+      <a href="index.html">Índice general &rarr;</a>
+    </div>
+  </main>
+</div>
+<script>
+  const burger = document.getElementById('burgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  burger?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.querySelectorAll('nav.sidebar a').forEach(a=>{
+    a.addEventListener('click', ()=> sidebar.classList.remove('open'));
+  });
+  const links = document.querySelectorAll('nav.sidebar a[href^="#"]');
+  const targets = Array.from(links).map(l=>document.querySelector(l.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const match = document.querySelector(`nav.sidebar a[href="#${e.target.id}"]`);
+        if(match) match.classList.add('active');
+      }
+    });
+  }, {rootMargin:"-20% 0px -70% 0px"});
+  targets.forEach(t=>io.observe(t));
+  document.addEventListener('DOMContentLoaded', function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ]
+    });
+  });
+</script>
+</body>
+</html>
