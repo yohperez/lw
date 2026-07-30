@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Avanzado, Estadística y Storytelling con Datos — Píldoras</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0a0e1a;
+    --bg-1:#0f1830;
+    --card:#141f38;
+    --card-2:#182645;
+    --border:#24365c;
+    --text:#dfe6f5;
+    --text-dim:#8fa1c7;
+    --accent:#f6ad55;
+    --accent-soft:#7a5326;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--bg-0),var(--bg-1) 300px, var(--bg-0) 100%);
+    color:var(--text);
+    min-height:100vh;
+  }
+  a{color:var(--accent);}
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;gap:12px;
+    padding:10px 18px;
+    background:rgba(10,14,26,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar .home{
+    font-size:14px;color:var(--text-dim);text-decoration:none;
+    padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  }
+  .topbar .home:hover{color:var(--text);border-color:var(--accent);}
+  .topbar .brand{font-weight:700;font-size:15px;color:var(--text);}
+  .topbar .brand span{color:var(--accent);}
+  .burger{
+    display:none;margin-left:auto;background:none;border:1px solid var(--border);
+    color:var(--text);font-size:18px;padding:6px 10px;border-radius:8px;cursor:pointer;
+  }
+  .layout{display:flex;max-width:1320px;margin:0 auto;}
+  nav.sidebar{
+    width:280px;flex-shrink:0;
+    height:calc(100vh - 49px);position:sticky;top:49px;
+    overflow-y:auto;padding:22px 14px 40px 22px;
+    border-right:1px solid var(--border);
+  }
+  nav.sidebar h3{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.08em;
+    color:var(--text-dim);margin:20px 0 8px;
+  }
+  nav.sidebar h3:first-child{margin-top:0;}
+  nav.sidebar a{
+    display:block;font-size:13.5px;color:var(--text-dim);text-decoration:none;
+    padding:5px 8px;border-radius:6px;line-height:1.35;
+  }
+  nav.sidebar a:hover{color:var(--text);background:var(--card);}
+  nav.sidebar a.active{color:var(--accent);background:var(--card-2);font-weight:600;}
+  main{flex:1;min-width:0;padding:36px 40px 100px;}
+  .hero{margin-bottom:36px;}
+  .hero .kicker{
+    display:inline-block;color:var(--accent);font-size:12.5px;font-weight:700;
+    letter-spacing:0.09em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .hero h1{font-size:32px;margin:0 0 12px;line-height:1.2;}
+  .hero p{color:var(--text-dim);font-size:15.5px;max-width:720px;line-height:1.6;}
+  section.mod{margin:48px 0 8px;}
+  section.mod > h2{
+    font-size:22px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:22px;
+    display:flex;align-items:center;gap:10px;
+  }
+  section.mod > h2 .n{
+    background:var(--accent);color:#0a0e1a;font-size:13px;font-weight:800;
+    width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .concept{
+    scroll-margin-top:64px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:22px 24px;margin-bottom:20px;
+  }
+  .concept h3{margin:0 0 10px;font-size:18px;color:var(--text);}
+  .concept .badge{
+    display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--accent-soft);
+    background:rgba(255,255,255,0.03);border-radius:20px;padding:2px 10px;margin-bottom:10px;
+  }
+  .concept p{margin:0 0 10px;color:var(--text);font-size:14.5px;line-height:1.65;}
+  .concept p.dim{color:var(--text-dim);}
+  .concept .visual{
+    margin:16px 0;padding:16px;background:var(--card-2);border:1px solid var(--border);
+    border-radius:10px;display:flex;justify-content:center;overflow-x:auto;
+  }
+  .concept .visual svg{max-width:100%;height:auto;}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+  .compare.thirds{grid-template-columns:1fr 1fr 1fr;}
+  .compare .col{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .compare .col h4{margin:0 0 8px;font-size:13.5px;color:var(--accent);}
+  .compare .col p{font-size:13.5px;margin:0;color:var(--text-dim);line-height:1.55;}
+  table.cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  table.cmp th,table.cmp td{border:1px solid var(--border);padding:8px 12px;text-align:left;}
+  table.cmp th{background:var(--card-2);color:var(--accent);}
+  table.cmp td{color:var(--text-dim);}
+  .katex-block{overflow-x:auto;padding:6px 0;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tag{font-size:11px;color:var(--text-dim);background:var(--card-2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+  .footnav{
+    display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;
+    border-top:1px solid var(--border);font-size:13.5px;
+  }
+  @media (max-width:900px){
+    .burger{display:block;}
+    nav.sidebar{
+      position:fixed;left:0;top:49px;bottom:0;background:var(--bg-0);
+      width:78vw;max-width:320px;transform:translateX(-105%);transition:transform .25s ease;
+      z-index:60;box-shadow:8px 0 24px rgba(0,0,0,0.4);
+    }
+    nav.sidebar.open{transform:translateX(0);}
+    main{padding:26px 18px 90px;}
+    .hero h1{font-size:26px;}
+    .compare, .compare.thirds{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="home" href="index.html">&larr; Inicio</a>
+  <div class="brand">Píldoras <span>Módulo 3</span></div>
+  <button class="burger" id="burgerBtn">☰</button>
+</div>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h3>Python avanzado</h3>
+    <a href="#dunder-methods">Los dunder methods en Python: qué hacen realmente __init__, __str__ y __len__</a>
+    <a href="#frameworks-frontend">Frameworks/librerías front-end</a>
+    <a href="#regex">Regex (Expresiones Regulares): el superpoder de la búsqueda de patrones en texto</a>
+    <a href="#numpy-arrays">Librería NumPy: Arrays y operaciones matemáticas</a>
+    <a href="#numpy-broadcasting">NumPy Broadcasting: cómo operar matrices de diferentes formas sin loops</a>
+    <h3>Herramientas de desarrollo y productividad</h3>
+    <a href="#jupyter-colab-shortcuts">Jupyter y Google Colab Shortcuts: teclas rápidas para volar programando en notebooks</a>
+    <a href="#markdown-avanzado">Markdown avanzado: tablas, diagramas Mermaid y fórmulas LaTeX en tu documentación</a>
+    <a href="#docker-volumes">Docker Volumes: persistencia de datos (que no se borre tu BBDD al apagar el contenedor)</a>
+    <a href="#missingno">Visualización de datos faltantes con missingno</a>
+    <a href="#dvc">DVC (Data Version Control) - Introducción</a>
+    <a href="#linters-ruff-black">Linters modernos: Ruff vs Black</a>
+    <a href="#git-stash-cherrypick">Git Stash &amp; Cherry-pick: cómo guardar cambios temporales o "robar" commits específicos</a>
+    <h3>Estadística aplicada</h3>
+    <a href="#test-hipotesis">Test de hipótesis en Python (T-test)</a>
+    <a href="#paradoja-simpson">La paradoja de Simpson (Estadística interpretativa / Caso de estudio)</a>
+    <a href="#historia-sesgo-1">Historia del sesgo: Caso real I y repercusiones</a>
+    <a href="#historia-sesgo-2">Historia del sesgo: Caso real II y repercusiones</a>
+    <h3>Data Storytelling y visualización</h3>
+    <a href="#data-storytelling">Data Storytelling: teoría del color, composición y cómo narrar una historia con datos</a>
+    <a href="#gestalt-visualizacion">Gestalt en Visualización: Principios psicológicos de agrupación visual para dashboards</a>
+    <a href="#colores-dataviz">Colores en Dataviz: Paletas secuenciales vs divergentes vs categóricas</a>
+    <a href="#formatos-imagen">Formatos de imagen: PNG vs SVG vs WebP en reportes de datos</a>
+    <h3>Dashboards con Streamlit</h3>
+    <a href="#streamlit-basico">Desarrollo de dashboards con Streamlit (estructura y widgets básicos)</a>
+    <a href="#streamlit-avanzado">Streamlit II: Callbacks, session state, despliegue (Streamlit Cloud)</a>
+  </nav>
+  <main>
+    <div class="hero">
+      <span class="kicker">Módulo 3</span>
+      <h1>Python Avanzado, Estadística y Storytelling con Datos</h1>
+      <p>Herramientas de productividad en Python, control de versiones, estadística aplicada y los principios para comunicar datos con dashboards y buen diseño visual.</p>
+    </div>
+<section class="mod">
+  <h2><span class="n">A</span> Python avanzado</h2>
+
+  <div class="concept" id="dunder-methods">
+    <h3>Los dunder methods en Python: qué hacen realmente __init__, __str__ y __len__</h3>
+    <p>"Dunder" viene de <em>double underscore</em>. Son métodos especiales que Python llama automáticamente en momentos concretos, permitiendo que tus propios objetos se comporten como los tipos nativos.</p>
+    <table class="cmp">
+      <tr><th>Método</th><th>Se dispara cuando…</th></tr>
+      <tr><td><code>__init__</code></td><td>se crea una nueva instancia (el "constructor")</td></tr>
+      <tr><td><code>__str__</code></td><td>se hace <code>print(objeto)</code> o <code>str(objeto)</code></td></tr>
+      <tr><td><code>__len__</code></td><td>se hace <code>len(objeto)</code></td></tr>
+    </table>
+  </div>
+
+  <div class="concept" id="frameworks-frontend">
+    <h3>Frameworks/librerías front-end</h3>
+    <p>Aunque el foco del bootcamp es datos y backend, es útil reconocer el panorama front-end (React, Vue, Svelte) para entender cómo consumen las APIs que se construyen del lado de Python, y para poder armar demos o dashboards simples sin depender siempre de otro equipo.</p>
+  </div>
+
+  <div class="concept" id="regex">
+    <h3>Regex (Expresiones Regulares): el superpoder de la búsqueda de patrones en texto</h3>
+    <p>Un mini-lenguaje para describir patrones de texto: validar un email, extraer todos los números de un documento, limpiar espacios repetidos. Una vez interiorizada la sintaxis básica, resuelve en una línea tareas que a mano tomarían decenas.</p>
+    <div class="visual" style="justify-content:flex-start;">
+      <pre style="margin:0;color:var(--text-dim);font-size:13px;">import re
+re.findall(r"\d+", "Factura 2024-035, total 128")   # ['2024', '035', '128']</pre>
+    </div>
+  </div>
+
+  <div class="concept" id="numpy-arrays">
+    <h3>Librería NumPy: Arrays y operaciones matemáticas</h3>
+    <p>Los arrays de NumPy almacenan datos numéricos de forma contigua en memoria y permiten operaciones vectorizadas (aplicar una operación a todo el array de una vez), lo que las hace órdenes de magnitud más rápidas que un loop en Python puro sobre listas.</p>
+  </div>
+
+  <div class="concept" id="numpy-broadcasting">
+    <h3>NumPy Broadcasting: cómo operar matrices de diferentes formas sin loops</h3>
+    <p>Broadcasting permite operar un array pequeño contra uno más grande "estirando" virtualmente el pequeño para que coincidan las formas, sin copiar datos de más ni escribir loops explícitos.</p>
+    <div class="visual">
+      <svg viewBox="0 0 340 100" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12">
+        <rect x="10" y="10" width="120" height="60" fill="none" stroke="var(--border)"/>
+        <text x="70" y="45" text-anchor="middle" fill="var(--text)">matriz (3,3)</text>
+        <text x="150" y="45" fill="var(--accent)">+</text>
+        <rect x="180" y="30" width="120" height="20" fill="var(--accent)" opacity="0.5"/>
+        <text x="240" y="45" text-anchor="middle" fill="var(--text)">vector (1,3)</text>
+        <text x="150" y="85" fill="var(--text-dim)" font-size="11">el vector se "repite" en cada fila</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">B</span> Herramientas de desarrollo y productividad</h2>
+
+  <div class="concept" id="jupyter-colab-shortcuts">
+    <h3>Jupyter y Google Colab Shortcuts: teclas rápidas para volar programando en notebooks</h3>
+    <div class="tag-row">
+      <span class="tag">Shift+Enter → ejecutar y avanzar</span>
+      <span class="tag">Esc + A/B → nueva celda arriba/abajo</span>
+      <span class="tag">Esc + D D → borrar celda</span>
+      <span class="tag">Ctrl+M M → celda a Markdown</span>
+    </div>
+  </div>
+
+  <div class="concept" id="markdown-avanzado">
+    <h3>Markdown avanzado: tablas, diagramas Mermaid y fórmulas LaTeX en tu documentación</h3>
+    <p>Markdown va mucho más allá de negritas y títulos: soporta tablas para comparar opciones, diagramas Mermaid para flujos y arquitecturas (<code>```mermaid</code>), y fórmulas matemáticas en LaTeX (<code>$$...$$</code>) — todo texto plano, versionable en Git.</p>
+    <div class="katex-block">\(E = mc^2\)</div>
+    <p class="dim">Esa línea se escribe simplemente como <code>$$E = mc^2$$</code> en el Markdown.</p>
+  </div>
+
+  <div class="concept" id="docker-volumes">
+    <h3>Docker Volumes: persistencia de datos (que no se borre tu BBDD al apagar el contenedor)</h3>
+    <p>Un contenedor Docker es efímero por diseño: al eliminarlo, todo lo que escribió en su sistema de archivos interno desaparece. Un volumen conecta una carpeta del contenedor con almacenamiento real fuera de él (en el host o gestionado por Docker), para que datos como una base de datos sobrevivan a reinicios y actualizaciones del contenedor.</p>
+    <div class="visual">
+      <svg viewBox="0 0 340 110" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="12">
+        <rect x="10" y="10" width="140" height="80" rx="10" fill="var(--card-2)" stroke="var(--border)"/>
+        <text x="80" y="55" text-anchor="middle" fill="var(--text)">Contenedor</text>
+        <rect x="190" y="10" width="140" height="80" rx="10" fill="var(--card-2)" stroke="var(--accent)"/>
+        <text x="260" y="55" text-anchor="middle" fill="var(--text)">Volumen (host)</text>
+        <line x1="150" y1="50" x2="190" y2="50" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="missingno">
+    <h3>Visualización de datos faltantes con missingno</h3>
+    <p>La librería <code>missingno</code> permite ver de un vistazo dónde y cómo se concentran los valores nulos de un DataFrame (matriz, heatmap de correlación entre nulos, dendrograma), algo mucho más difícil de detectar solo con <code>df.isnull().sum()</code>.</p>
+  </div>
+
+  <div class="concept" id="dvc">
+    <h3>DVC (Data Version Control) - Introducción</h3>
+    <p>Git versiona bien código, pero no datasets grandes ni modelos pesados. DVC extiende esa misma lógica de versionado (commits, branches) a archivos de datos y modelos, guardando solo punteros ligeros en Git mientras los archivos reales viven en almacenamiento externo (S3, Google Drive, etc.).</p>
+  </div>
+
+  <div class="concept" id="linters-ruff-black">
+    <h3>Linters modernos: Ruff vs Black</h3>
+    <div class="compare">
+      <div class="col"><h4>Black</h4><p>Formateador "sin opiniones que discutir": reescribe el código a un único estilo consistente automáticamente.</p></div>
+      <div class="col"><h4>Ruff</h4><p>Linter (y cada vez más, también formateador) escrito en Rust, extremadamente rápido, que detecta errores, imports sin usar y problemas de estilo, reemplazando varias herramientas antiguas (flake8, isort) a la vez.</p></div>
+    </div>
+  </div>
+
+  <div class="concept" id="git-stash-cherrypick">
+    <h3>Git Stash &amp; Cherry-pick: cómo guardar cambios temporales o "robar" commits específicos</h3>
+    <div class="compare">
+      <div class="col"><h4>git stash</h4><p>Guarda temporalmente los cambios sin commitear para poder cambiar de rama con el árbol de trabajo limpio, y recuperarlos después con <code>git stash pop</code>.</p></div>
+      <div class="col"><h4>git cherry-pick</h4><p>Toma un commit específico de otra rama y lo aplica sobre la rama actual, sin traer el resto del historial de esa rama.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">C</span> Estadística aplicada</h2>
+
+  <div class="concept" id="test-hipotesis">
+    <h3>Test de hipótesis en Python (T-test)</h3>
+    <span class="badge">scipy.stats</span>
+    <p>Un T-test evalúa si la diferencia observada entre dos grupos (por ejemplo, conversión con y sin un cambio de diseño) es lo bastante grande como para no ser explicable solo por azar, dado el tamaño de muestra y su variabilidad.</p>
+    <div class="visual">
+      <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20,100 Q60,20 100,100" fill="var(--accent)" opacity="0.35" stroke="var(--accent)"/>
+        <path d="M110,100 Q160,30 210,100" fill="var(--card-2)" opacity="0.7" stroke="var(--text-dim)"/>
+      </svg>
+    </div>
+    <p class="dim">Cuanto menos se solapan las dos distribuciones, más probable es que la diferencia entre grupos sea real (y no ruido).</p>
+  </div>
+
+  <div class="concept" id="paradoja-simpson">
+    <h3>La paradoja de Simpson (Estadística interpretativa / Caso de estudio)</h3>
+    <p>Ocurre cuando una tendencia aparece en varios grupos por separado, pero se revierte o desaparece al combinar esos grupos en uno solo — normalmente porque una tercera variable oculta (un factor de confusión) afecta de forma distinta a cada grupo.</p>
+  </div>
+
+  <div class="concept" id="historia-sesgo-1">
+    <h3>Historia del sesgo: Caso real I y repercusiones</h3>
+    <p>Los casos históricos de algoritmos que amplificaron sesgos existentes en los datos (en contratación, crédito o justicia predictiva) muestran que un modelo "matemáticamente correcto" puede seguir siendo injusto si los datos de entrenamiento ya reflejaban desigualdades previas.</p>
+  </div>
+
+  <div class="concept" id="historia-sesgo-2">
+    <h3>Historia del sesgo: Caso real II y repercusiones</h3>
+    <p>Un segundo caso refuerza la misma lección desde otro ángulo: la responsabilidad de auditar el sesgo no termina al lanzar el modelo — requiere monitoreo continuo, porque los patrones de los datos (y del mundo real que representan) cambian con el tiempo.</p>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">D</span> Data Storytelling y visualización</h2>
+
+  <div class="concept" id="data-storytelling">
+    <h3>Data Storytelling: teoría del color, composición y cómo narrar una historia con datos</h3>
+    <p>Un buen gráfico no solo muestra números correctos: guía la mirada hacia el mensaje principal. Eso implica elegir qué resaltar con color (y qué dejar en gris), ordenar la composición para que el ojo siga un recorrido lógico, y acompañar el dato con una narrativa clara de qué significa y qué hacer al respecto.</p>
+  </div>
+
+  <div class="concept" id="gestalt-visualizacion">
+    <h3>Gestalt en Visualización: Principios psicológicos de agrupación visual para dashboards</h3>
+    <div class="tag-row">
+      <span class="tag">Proximidad</span><span class="tag">Similitud</span>
+      <span class="tag">Continuidad</span><span class="tag">Cierre</span>
+    </div>
+    <p>El cerebro agrupa elementos visuales automáticamente según estos principios, aunque nadie se lo indique explícitamente. Un dashboard bien diseñado aprovecha esto a propósito: elementos relacionados se colocan cerca (proximidad) y con estilos similares (similitud), para que la relación entre ellos sea obvia sin necesidad de leer etiquetas.</p>
+  </div>
+
+  <div class="concept" id="colores-dataviz">
+    <h3>Colores en Dataviz: Paletas secuenciales vs divergentes vs categóricas</h3>
+    <div class="visual">
+      <svg viewBox="0 0 380 90" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+        <g transform="translate(0,0)">
+          <rect x="0" y="10" width="20" height="20" fill="#1e3a5f"/><rect x="20" y="10" width="20" height="20" fill="#2c5c8a"/>
+          <rect x="40" y="10" width="20" height="20" fill="#4a90c4"/><rect x="60" y="10" width="20" height="20" fill="#8fc4ea"/>
+          <text x="0" y="48" fill="var(--text-dim)">Secuencial</text>
+        </g>
+        <g transform="translate(130,0)">
+          <rect x="0" y="10" width="20" height="20" fill="#e07856"/><rect x="20" y="10" width="20" height="20" fill="#f3c3ab"/>
+          <rect x="40" y="10" width="20" height="20" fill="#c7e3e8"/><rect x="60" y="10" width="20" height="20" fill="#4a90c4"/>
+          <text x="0" y="48" fill="var(--text-dim)">Divergente</text>
+        </g>
+        <g transform="translate(260,0)">
+          <rect x="0" y="10" width="20" height="20" fill="#f6ad55"/><rect x="20" y="10" width="20" height="20" fill="#a78bfa"/>
+          <rect x="40" y="10" width="20" height="20" fill="#4fd1c5"/><rect x="60" y="10" width="20" height="20" fill="#fb7185"/>
+          <text x="0" y="48" fill="var(--text-dim)">Categórica</text>
+        </g>
+      </svg>
+    </div>
+    <p class="dim">Secuencial: para valores de bajo a alto. Divergente: para valores con un punto medio significativo (0, promedio). Categórica: para categorías sin orden intrínseco.</p>
+  </div>
+
+  <div class="concept" id="formatos-imagen">
+    <h3>Formatos de imagen: PNG vs SVG vs WebP en reportes de datos</h3>
+    <table class="cmp">
+      <tr><th>Formato</th><th>Tipo</th><th>Mejor para</th></tr>
+      <tr><td>PNG</td><td>Raster, sin pérdida</td><td>Capturas de pantalla, gráficos con muchos detalles de píxel</td></tr>
+      <tr><td>SVG</td><td>Vectorial</td><td>Diagramas y gráficos que deben verse nítidos a cualquier tamaño/zoom</td></tr>
+      <tr><td>WebP</td><td>Raster, compresión moderna</td><td>Peso de archivo reducido para web sin perder mucha calidad</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">E</span> Dashboards con Streamlit</h2>
+
+  <div class="concept" id="streamlit-basico">
+    <h3>Desarrollo de dashboards con Streamlit (estructura y widgets básicos)</h3>
+    <p>Streamlit convierte un script de Python normal en una app web interactiva, sin escribir HTML/CSS/JS. Cada widget (<code>st.slider</code>, <code>st.selectbox</code>, <code>st.file_uploader</code>) es una línea de código que automáticamente añade un control interactivo a la página.</p>
+  </div>
+
+  <div class="concept" id="streamlit-avanzado">
+    <h3>Streamlit II: Callbacks, session state, despliegue (Streamlit Cloud)</h3>
+    <p>Streamlit re-ejecuta todo el script de arriba a abajo cada vez que el usuario interactúa con un widget. <code>st.session_state</code> es la forma de conservar información entre esas re-ejecuciones (por ejemplo, un contador o datos ya cargados), y los callbacks permiten reaccionar a un cambio de widget antes de que se vuelva a dibujar la página. Streamlit Cloud permite publicar la app gratis directo desde un repositorio de GitHub.</p>
+  </div>
+</section>
+
+    <div class="footnav">
+      <a href="index.html">&larr; Volver al índice general</a>
+      <a href="modulo2.html">&larr; Modulo2</a> &nbsp;|&nbsp; <a href="modulo4.html">Siguiente: Modulo4 &rarr;</a>
+    </div>
+  </main>
+</div>
+<script>
+  const burger = document.getElementById('burgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  burger?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.querySelectorAll('nav.sidebar a').forEach(a=>{
+    a.addEventListener('click', ()=> sidebar.classList.remove('open'));
+  });
+  const links = document.querySelectorAll('nav.sidebar a[href^="#"]');
+  const targets = Array.from(links).map(l=>document.querySelector(l.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const match = document.querySelector(`nav.sidebar a[href="#${e.target.id}"]`);
+        if(match) match.classList.add('active');
+      }
+    });
+  }, {rootMargin:"-20% 0px -70% 0px"});
+  targets.forEach(t=>io.observe(t));
+  document.addEventListener('DOMContentLoaded', function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ]
+    });
+  });
+</script>
+</body>
+</html>

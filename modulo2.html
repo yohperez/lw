@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentos de Machine Learning — Píldoras</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0a0e1a;
+    --bg-1:#0f1830;
+    --card:#141f38;
+    --card-2:#182645;
+    --border:#24365c;
+    --text:#dfe6f5;
+    --text-dim:#8fa1c7;
+    --accent:#a78bfa;
+    --accent-soft:#4b3f80;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--bg-0),var(--bg-1) 300px, var(--bg-0) 100%);
+    color:var(--text);
+    min-height:100vh;
+  }
+  a{color:var(--accent);}
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;gap:12px;
+    padding:10px 18px;
+    background:rgba(10,14,26,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar .home{
+    font-size:14px;color:var(--text-dim);text-decoration:none;
+    padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  }
+  .topbar .home:hover{color:var(--text);border-color:var(--accent);}
+  .topbar .brand{font-weight:700;font-size:15px;color:var(--text);}
+  .topbar .brand span{color:var(--accent);}
+  .burger{
+    display:none;margin-left:auto;background:none;border:1px solid var(--border);
+    color:var(--text);font-size:18px;padding:6px 10px;border-radius:8px;cursor:pointer;
+  }
+  .layout{display:flex;max-width:1320px;margin:0 auto;}
+  nav.sidebar{
+    width:280px;flex-shrink:0;
+    height:calc(100vh - 49px);position:sticky;top:49px;
+    overflow-y:auto;padding:22px 14px 40px 22px;
+    border-right:1px solid var(--border);
+  }
+  nav.sidebar h3{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.08em;
+    color:var(--text-dim);margin:20px 0 8px;
+  }
+  nav.sidebar h3:first-child{margin-top:0;}
+  nav.sidebar a{
+    display:block;font-size:13.5px;color:var(--text-dim);text-decoration:none;
+    padding:5px 8px;border-radius:6px;line-height:1.35;
+  }
+  nav.sidebar a:hover{color:var(--text);background:var(--card);}
+  nav.sidebar a.active{color:var(--accent);background:var(--card-2);font-weight:600;}
+  main{flex:1;min-width:0;padding:36px 40px 100px;}
+  .hero{margin-bottom:36px;}
+  .hero .kicker{
+    display:inline-block;color:var(--accent);font-size:12.5px;font-weight:700;
+    letter-spacing:0.09em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .hero h1{font-size:32px;margin:0 0 12px;line-height:1.2;}
+  .hero p{color:var(--text-dim);font-size:15.5px;max-width:720px;line-height:1.6;}
+  section.mod{margin:48px 0 8px;}
+  section.mod > h2{
+    font-size:22px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:22px;
+    display:flex;align-items:center;gap:10px;
+  }
+  section.mod > h2 .n{
+    background:var(--accent);color:#0a0e1a;font-size:13px;font-weight:800;
+    width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .concept{
+    scroll-margin-top:64px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:22px 24px;margin-bottom:20px;
+  }
+  .concept h3{margin:0 0 10px;font-size:18px;color:var(--text);}
+  .concept .badge{
+    display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--accent-soft);
+    background:rgba(255,255,255,0.03);border-radius:20px;padding:2px 10px;margin-bottom:10px;
+  }
+  .concept p{margin:0 0 10px;color:var(--text);font-size:14.5px;line-height:1.65;}
+  .concept p.dim{color:var(--text-dim);}
+  .concept .visual{
+    margin:16px 0;padding:16px;background:var(--card-2);border:1px solid var(--border);
+    border-radius:10px;display:flex;justify-content:center;overflow-x:auto;
+  }
+  .concept .visual svg{max-width:100%;height:auto;}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+  .compare.thirds{grid-template-columns:1fr 1fr 1fr;}
+  .compare .col{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .compare .col h4{margin:0 0 8px;font-size:13.5px;color:var(--accent);}
+  .compare .col p{font-size:13.5px;margin:0;color:var(--text-dim);line-height:1.55;}
+  table.cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  table.cmp th,table.cmp td{border:1px solid var(--border);padding:8px 12px;text-align:left;}
+  table.cmp th{background:var(--card-2);color:var(--accent);}
+  table.cmp td{color:var(--text-dim);}
+  .katex-block{overflow-x:auto;padding:6px 0;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .tag{font-size:11px;color:var(--text-dim);background:var(--card-2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+  .footnav{
+    display:flex;justify-content:space-between;margin-top:60px;padding-top:24px;
+    border-top:1px solid var(--border);font-size:13.5px;
+  }
+  @media (max-width:900px){
+    .burger{display:block;}
+    nav.sidebar{
+      position:fixed;left:0;top:49px;bottom:0;background:var(--bg-0);
+      width:78vw;max-width:320px;transform:translateX(-105%);transition:transform .25s ease;
+      z-index:60;box-shadow:8px 0 24px rgba(0,0,0,0.4);
+    }
+    nav.sidebar.open{transform:translateX(0);}
+    main{padding:26px 18px 90px;}
+    .hero h1{font-size:26px;}
+    .compare, .compare.thirds{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="home" href="index.html">&larr; Inicio</a>
+  <div class="brand">Píldoras <span>Módulo 2</span></div>
+  <button class="burger" id="burgerBtn">☰</button>
+</div>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h3>Preprocesamiento y preparación de datos</h3>
+    <a href="#maldicion-dimensionalidad">La maldición de la dimensionalidad</a>
+    <a href="#onehot-label">One-Hot vs Label Encoding</a>
+    <a href="#scalers">Scalers (MinMax, Standard)</a>
+    <a href="#smote-adasyn">SMOTE y ADASYN</a>
+    <a href="#vif">VIF (Variance Inflation Factor)</a>
+    <h3>Modelos clásicos de ML</h3>
+    <a href="#hiperparametros-arbol">Hiperparámetros de un Árbol de Decisión</a>
+    <a href="#svm-kernel">Support Vector Machines (Concepto Kernel)</a>
+    <a href="#knn">KNN (K-Nearest Neighbors)</a>
+    <a href="#naive-bayes">Naive Bayes: por qué funciona tan bien en clasificación de texto spam</a>
+    <a href="#gradient-descent">Gradient Descent: la metáfora del montañero ciego bajando la montaña</a>
+    <h3>Evaluación de modelos</h3>
+    <a href="#metricas-clasificacion">Métricas de Clasificación</a>
+    <a href="#matriz-confusion">Matriz de Confusión</a>
+    <a href="#cross-validation">Cross-Validation (cross_val_score)</a>
+    <a href="#roc-pr">Curva ROC vs Precision-Recall: cuál mirar cuando hay desbalanceo</a>
+    <a href="#gridsearch-randomsearch">GridSearch vs RandomSearch</a>
+    <a href="#feature-importance">Feature Importance: Permutation importance vs Feature importance de árboles</a>
+    <h3>Clustering y reducción de dimensionalidad</h3>
+    <a href="#kmeans-codo">K-Means y el método del codo</a>
+    <a href="#kmeans-plusplus">K-Means++: por qué la inicialización aleatoria de clusters es mala idea</a>
+    <a href="#pca-varianza">PCA: Explicación de varianza</a>
+    <a href="#dbscan-clustering">DBSCAN (Clustering por densidad)</a>
+    <h3>Herramientas de experimentación</h3>
+    <a href="#pickle-joblib">Pickle vs Joblib: seguridad y eficiencia al guardar modelos</a>
+    <a href="#wandb">Weights & Biases (W&amp;B): alternativa visual a MLflow</a>
+  </nav>
+  <main>
+    <div class="hero">
+      <span class="kicker">Módulo 2</span>
+      <h1>Fundamentos de Machine Learning</h1>
+      <p>Preprocesamiento, algoritmos clásicos de clasificación, métricas de evaluación y las primeras técnicas de clustering y reducción de dimensionalidad.</p>
+    </div>
+<section class="mod">
+  <h2><span class="n">A</span> Preprocesamiento y preparación de datos</h2>
+
+  <div class="concept" id="maldicion-dimensionalidad">
+    <h3>La maldición de la dimensionalidad</h3>
+    <p>A medida que agregas más features (dimensiones), el espacio donde "viven" los datos crece exponencialmente, pero la cantidad de datos no. El resultado: los puntos quedan cada vez más dispersos y las nociones de "cercanía" (clave para KNN, clustering, etc.) dejan de ser confiables.</p>
+    <div class="visual">
+      <svg viewBox="0 0 500 130" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="12">
+        <g transform="translate(20,10)">
+          <line x1="0" y1="100" x2="100" y2="100" stroke="var(--border)"/>
+          <circle cx="20" cy="100" r="4" fill="var(--accent)"/><circle cx="45" cy="100" r="4" fill="var(--accent)"/>
+          <circle cx="65" cy="100" r="4" fill="var(--accent)"/><circle cx="85" cy="100" r="4" fill="var(--accent)"/>
+          <text x="50" y="120" text-anchor="middle" fill="var(--text-dim)">1D: denso</text>
+        </g>
+        <g transform="translate(190,0)">
+          <rect x="0" y="0" width="110" height="110" fill="none" stroke="var(--border)"/>
+          <circle cx="15" cy="90" r="3" fill="var(--accent)"/><circle cx="80" cy="20" r="3" fill="var(--accent)"/>
+          <circle cx="60" cy="60" r="3" fill="var(--accent)"/><circle cx="95" cy="95" r="3" fill="var(--accent)"/>
+          <text x="55" y="126" text-anchor="middle" fill="var(--text-dim)">2D: más disperso</text>
+        </g>
+        <g transform="translate(360,0)">
+          <rect x="10" y="10" width="110" height="100" fill="none" stroke="var(--border)" transform="skewX(-10)"/>
+          <circle cx="30" cy="95" r="3" fill="var(--accent)"/><circle cx="110" cy="25" r="3" fill="var(--accent)"/>
+          <text x="70" y="126" text-anchor="middle" fill="var(--text-dim)">3D+: casi vacío</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="onehot-label">
+    <h3>One-Hot vs Label Encoding</h3>
+    <div class="compare">
+      <div class="col"><h4>Label Encoding</h4><p>Asigna un número entero a cada categoría (rojo=0, verde=1, azul=2). Introduce una relación de orden falsa que puede confundir a modelos que asumen que los números son magnitudes (como regresión lineal).</p></div>
+      <div class="col"><h4>One-Hot Encoding</h4><p>Crea una columna binaria por categoría (es_rojo, es_verde, es_azul). No inventa orden, pero puede disparar el número de columnas si hay muchas categorías distintas.</p></div>
+    </div>
+  </div>
+
+  <div class="concept" id="scalers">
+    <h3>Scalers (MinMax, Standard)</h3>
+    <table class="cmp">
+      <tr><th>Scaler</th><th>Qué hace</th><th>Cuándo usarlo</th></tr>
+      <tr><td>MinMaxScaler</td><td>Reescala todo al rango [0,1]</td><td>Cuando se necesita un rango acotado (redes neuronales, imágenes)</td></tr>
+      <tr><td>StandardScaler</td><td>Centra en media 0 y desviación estándar 1</td><td>Algoritmos sensibles a la escala y que asumen distribución más simétrica (SVM, regresión logística, PCA)</td></tr>
+    </table>
+  </div>
+
+  <div class="concept" id="smote-adasyn">
+    <h3>SMOTE y ADASYN</h3>
+    <p>Cuando una clase es minoritaria (por ejemplo, 2% de fraude vs 98% normal), el modelo puede aprender a ignorarla. SMOTE genera ejemplos sintéticos nuevos de la clase minoritaria interpolando entre vecinos reales; ADASYN hace algo similar pero genera más ejemplos donde el modelo tiene más dificultad para clasificar bien.</p>
+  </div>
+
+  <div class="concept" id="vif">
+    <h3>VIF (Variance Inflation Factor)</h3>
+    <p>Detecta multicolinealidad: cuando dos o más variables predictoras están tan correlacionadas entre sí que el modelo no puede distinguir el efecto individual de cada una, inflando la varianza de sus coeficientes.</p>
+    <div class="katex-block">\(VIF_i = \dfrac{1}{1 - R_i^2}\)</div>
+    <p class="dim">Un VIF mayor a 5-10 suele considerarse señal de alerta de multicolinealidad.</p>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">B</span> Modelos clásicos de ML</h2>
+
+  <div class="concept" id="hiperparametros-arbol">
+    <h3>Hiperparámetros de un Árbol de Decisión</h3>
+    <div class="tag-row">
+      <span class="tag">max_depth</span><span class="tag">min_samples_split</span>
+      <span class="tag">min_samples_leaf</span><span class="tag">criterion (gini/entropy)</span>
+    </div>
+    <p>Controlan qué tan "profundo" y específico puede volverse el árbol. Un árbol sin límites de profundidad memoriza el set de entrenamiento (overfitting); limitarlos fuerza al árbol a generalizar mejor.</p>
+  </div>
+
+  <div class="concept" id="svm-kernel">
+    <h3>Support Vector Machines (Concepto Kernel)</h3>
+    <p>Un SVM busca la frontera que separa dos clases con el mayor margen posible. Cuando los datos no son separables con una línea recta, el "kernel trick" proyecta los datos a un espacio de más dimensiones donde sí lo son, sin tener que calcular esa proyección explícitamente.</p>
+    <div class="visual">
+      <svg viewBox="0 0 480 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="12">
+        <g transform="translate(10,10)">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)"/>
+          <circle cx="60" cy="60" r="6" fill="var(--accent)"/><circle cx="75" cy="45" r="6" fill="var(--accent)"/>
+          <circle cx="45" cy="75" r="6" fill="var(--accent)"/>
+          <circle cx="20" cy="20" r="6" fill="var(--text-dim)"/><circle cx="100" cy="100" r="6" fill="var(--text-dim)"/>
+          <circle cx="100" cy="20" r="6" fill="var(--text-dim)"/><circle cx="20" cy="100" r="6" fill="var(--text-dim)"/>
+          <text x="60" y="135" text-anchor="middle" fill="var(--text-dim)">No separable en 2D</text>
+        </g>
+        <g transform="translate(230,220)">
+        </g>
+        <text x="200" y="70" fill="var(--accent)" font-size="22">→ kernel →</text>
+        <g transform="translate(300,10)">
+          <line x1="0" y1="90" x2="150" y2="30" stroke="var(--accent)" stroke-dasharray="4 3"/>
+          <circle cx="40" cy="45" r="6" fill="var(--accent)"/><circle cx="70" cy="35" r="6" fill="var(--accent)"/>
+          <circle cx="55" cy="55" r="6" fill="var(--accent)"/>
+          <circle cx="20" cy="95" r="6" fill="var(--text-dim)"/><circle cx="130" cy="65" r="6" fill="var(--text-dim)"/>
+          <circle cx="100" cy="90" r="6" fill="var(--text-dim)"/>
+          <text x="75" y="135" text-anchor="middle" fill="var(--text-dim)">Separable en más dimensiones</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="knn">
+    <h3>KNN (K-Nearest Neighbors)</h3>
+    <p>Clasifica un punto nuevo mirando a sus K vecinos más cercanos ya etiquetados y votando por la clase mayoritaria entre ellos. No "entrena" un modelo en el sentido tradicional: toda la decisión ocurre al momento de predecir.</p>
+    <div class="visual">
+      <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+        <circle cx="130" cy="75" r="55" fill="none" stroke="var(--accent)" stroke-dasharray="4 3"/>
+        <circle cx="130" cy="75" r="6" fill="#fff"/>
+        <circle cx="110" cy="55" r="6" fill="var(--accent)"/><circle cx="150" cy="60" r="6" fill="var(--accent)"/>
+        <circle cx="120" cy="100" r="6" fill="var(--accent)"/>
+        <circle cx="60" cy="30" r="6" fill="var(--text-dim)"/><circle cx="200" cy="120" r="6" fill="var(--text-dim)"/>
+        <text x="130" y="20" text-anchor="middle" fill="var(--text-dim)">K=3 vecinos deciden la clase</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="naive-bayes">
+    <h3>Naive Bayes: por qué funciona tan bien en clasificación de texto spam</h3>
+    <p>Asume (de forma "ingenua") que todas las palabras de un mensaje son independientes entre sí dado que se sabe si es spam o no. Es una suposición técnicamente falsa, pero en la práctica funciona muy bien para texto porque lo que importa es la presencia/frecuencia relativa de palabras clave, no su dependencia mutua exacta.</p>
+  </div>
+
+  <div class="concept" id="gradient-descent">
+    <h3>Gradient Descent: la metáfora del montañero ciego bajando la montaña</h3>
+    <p>Imagina a alguien en la niebla, sin ver el paisaje, que solo puede sentir la inclinación bajo sus pies. En cada paso, avanza en la dirección donde el terreno baja más rápido. Así funciona el descenso de gradiente: en cada iteración, ajusta los parámetros del modelo en la dirección opuesta al gradiente (la pendiente) de la función de error.</p>
+    <div class="visual">
+      <svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20,20 Q200,150 380,20" fill="none" stroke="var(--border)" stroke-width="2"/>
+        <circle cx="70" cy="55" r="7" fill="var(--accent)"/>
+        <circle cx="130" cy="90" r="6" fill="var(--accent)" opacity="0.7"/>
+        <circle cx="180" cy="108" r="5" fill="var(--accent)" opacity="0.5"/>
+        <circle cx="205" cy="112" r="4" fill="var(--accent)" opacity="0.3"/>
+      </svg>
+    </div>
+    <div class="katex-block">\(\theta_{t+1} = \theta_t - \eta \nabla J(\theta_t)\)</div>
+    <p class="dim">Aquí <code>η</code> (eta) es la tasa de aprendizaje: qué tan grandes son los "pasos" del montañero.</p>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">C</span> Evaluación de modelos</h2>
+
+  <div class="concept" id="metricas-clasificacion">
+    <h3>Métricas de Clasificación</h3>
+    <span class="badge">Accuracy · Recall · F1</span>
+    <table class="cmp">
+      <tr><th>Métrica</th><th>Responde a</th></tr>
+      <tr><td>Accuracy</td><td>¿Qué % de todas las predicciones fueron correctas?</td></tr>
+      <tr><td>Recall (sensibilidad)</td><td>De todos los casos positivos reales, ¿cuántos detectó el modelo?</td></tr>
+      <tr><td>Precision</td><td>De lo que el modelo marcó como positivo, ¿cuánto lo era en verdad?</td></tr>
+      <tr><td>F1-score</td><td>Media armónica entre precision y recall, útil cuando hay que balancear ambas.</td></tr>
+    </table>
+  </div>
+
+  <div class="concept" id="matriz-confusion">
+    <h3>Matriz de Confusión</h3>
+    <p>Organiza los aciertos y errores de un clasificador en una tabla de 2x2 (o más, si hay varias clases): verdaderos positivos, falsos positivos, verdaderos negativos y falsos negativos. De aquí se derivan casi todas las demás métricas de clasificación.</p>
+    <div class="visual">
+      <svg viewBox="0 0 300 170" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="12">
+        <rect x="80" y="20" width="100" height="60" fill="var(--accent)" opacity="0.55"/>
+        <rect x="180" y="20" width="100" height="60" fill="var(--card-2)" stroke="var(--border)"/>
+        <rect x="80" y="80" width="100" height="60" fill="var(--card-2)" stroke="var(--border)"/>
+        <rect x="180" y="80" width="100" height="60" fill="var(--accent)" opacity="0.55"/>
+        <text x="130" y="55" text-anchor="middle" fill="var(--text)">VP</text>
+        <text x="230" y="55" text-anchor="middle" fill="var(--text)">FP</text>
+        <text x="130" y="115" text-anchor="middle" fill="var(--text)">FN</text>
+        <text x="230" y="115" text-anchor="middle" fill="var(--text)">VN</text>
+        <text x="130" y="14" text-anchor="middle" fill="var(--text-dim)">Predijo: Sí</text>
+        <text x="230" y="14" text-anchor="middle" fill="var(--text-dim)">Predijo: No</text>
+        <text x="10" y="55" fill="var(--text-dim)">Real: Sí</text>
+        <text x="10" y="115" fill="var(--text-dim)">Real: No</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="cross-validation">
+    <h3>Cross-Validation (cross_val_score)</h3>
+    <p>En vez de evaluar el modelo con una sola división train/test, la divide en K partes (folds); entrena K veces usando K-1 partes y evalúa en la parte restante, rotando cuál parte se deja afuera. El promedio de las K evaluaciones da una estimación mucho más confiable del rendimiento real.</p>
+  </div>
+
+  <div class="concept" id="roc-pr">
+    <h3>Curva ROC vs Precision-Recall: cuál mirar cuando hay desbalanceo</h3>
+    <div class="visual">
+      <svg viewBox="0 0 420 150" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+        <g transform="translate(10,10)">
+          <line x1="0" y1="110" x2="180" y2="110" stroke="var(--border)"/>
+          <line x1="0" y1="110" x2="0" y2="0" stroke="var(--border)"/>
+          <path d="M0,110 Q60,10 180,0" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <line x1="0" y1="110" x2="180" y2="0" stroke="var(--text-dim)" stroke-dasharray="3 3"/>
+          <text x="90" y="130" text-anchor="middle" fill="var(--text-dim)">ROC (FPR vs TPR)</text>
+        </g>
+        <g transform="translate(230,10)">
+          <line x1="0" y1="110" x2="180" y2="110" stroke="var(--border)"/>
+          <line x1="0" y1="110" x2="0" y2="0" stroke="var(--border)"/>
+          <path d="M0,10 Q100,20 180,100" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          <text x="90" y="130" text-anchor="middle" fill="var(--text-dim)">Precision-Recall</text>
+        </g>
+      </svg>
+    </div>
+    <p class="dim">Con clases muy desbalanceadas, ROC puede verse "engañosamente bueno" porque los verdaderos negativos (la clase mayoritaria) dominan. La curva Precision-Recall se enfoca solo en cómo le va al modelo con la clase positiva (minoritaria), por lo que suele ser más honesta en ese escenario.</p>
+  </div>
+
+  <div class="concept" id="gridsearch-randomsearch">
+    <h3>GridSearch vs RandomSearch</h3>
+    <div class="compare">
+      <div class="col"><h4>GridSearchCV</h4><p>Prueba exhaustivamente todas las combinaciones posibles de hiperparámetros en una grilla definida. Garantiza no dejar nada fuera, pero crece muy rápido si hay muchos hiperparámetros.</p></div>
+      <div class="col"><h4>RandomizedSearchCV</h4><p>Prueba una muestra aleatoria de combinaciones dentro de rangos definidos. Con presupuesto limitado, suele encontrar una combinación casi tan buena mucho más rápido.</p></div>
+    </div>
+  </div>
+
+  <div class="concept" id="feature-importance">
+    <h3>Feature Importance: Permutation importance vs Feature importance de árboles</h3>
+    <div class="compare">
+      <div class="col"><h4>Importancia de árboles (nativa)</h4><p>Se calcula durante el entrenamiento, midiendo cuánto reduce cada variable la impureza en los splits. Puede sobrestimar variables con muchos valores únicos.</p></div>
+      <div class="col"><h4>Permutation importance</h4><p>Mide cuánto empeora el rendimiento del modelo ya entrenado si se "revuelve" (permuta) aleatoriamente los valores de una columna. Funciona con cualquier modelo, no solo árboles, y es más robusta frente a ese sesgo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">D</span> Clustering y reducción de dimensionalidad</h2>
+
+  <div class="concept" id="kmeans-codo">
+    <h3>K-Means y el método del codo</h3>
+    <p>K-Means agrupa los datos en K clusters minimizando la distancia de cada punto al centroide de su grupo. Como hay que elegir K de antemano, el "método del codo" grafica el error (inercia) para distintos valores de K: el punto donde la curva deja de bajar bruscamente ("el codo") sugiere un buen valor de K.</p>
+    <div class="visual">
+      <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+        <line x1="20" y1="120" x2="300" y2="120" stroke="var(--border)"/>
+        <line x1="20" y1="120" x2="20" y2="10" stroke="var(--border)"/>
+        <polyline points="30,20 70,50 110,80 150,95 190,102 230,107 270,110" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="110" cy="80" r="5" fill="#fff" stroke="var(--accent)" stroke-width="2"/>
+        <text x="110" y="70" text-anchor="middle" fill="var(--text)">codo (K óptimo)</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="concept" id="kmeans-plusplus">
+    <h3>K-Means++: por qué la inicialización aleatoria de clusters es mala idea</h3>
+    <p>Si los centroides iniciales se eligen totalmente al azar, K-Means puede quedar atrapado en una mala solución (clusters vacíos o mal repartidos) o tardar mucho en converger. K-Means++ elige los centroides iniciales de forma que estén bien distribuidos y alejados entre sí, lo que da resultados más estables y consistentes entre corridas.</p>
+  </div>
+
+  <div class="concept" id="pca-varianza">
+    <h3>PCA: Explicación de varianza</h3>
+    <p>PCA busca nuevas direcciones (componentes principales) que capturen la mayor cantidad posible de varianza (información) de los datos originales, en orden decreciente. Así se pueden usar solo las primeras componentes y reducir dimensiones perdiendo la menor información posible.</p>
+    <div class="visual">
+      <svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" font-family="system-ui" font-size="11">
+        <line x1="20" y1="110" x2="300" y2="110" stroke="var(--border)"/>
+        <rect x="35" y="20" width="30" height="90" fill="var(--accent)"/>
+        <rect x="85" y="55" width="30" height="55" fill="var(--accent)" opacity="0.75"/>
+        <rect x="135" y="80" width="30" height="30" fill="var(--accent)" opacity="0.5"/>
+        <rect x="185" y="95" width="30" height="15" fill="var(--accent)" opacity="0.3"/>
+        <text x="50" y="122" fill="var(--text-dim)">PC1</text><text x="100" y="122" fill="var(--text-dim)">PC2</text>
+        <text x="150" y="122" fill="var(--text-dim)">PC3</text><text x="200" y="122" fill="var(--text-dim)">PC4</text>
+      </svg>
+    </div>
+    <p class="dim">Con dos o tres componentes que expliquen, por ejemplo, el 90% de la varianza, ya se puede visualizar y modelar sin las demás dimensiones.</p>
+  </div>
+
+  <div class="concept" id="dbscan-clustering">
+    <h3>DBSCAN (Clustering por densidad)</h3>
+    <p>A diferencia de K-Means, DBSCAN no necesita que se le diga cuántos clusters hay: agrupa puntos que están densamente conectados entre sí, y marca como "ruido" los puntos aislados que no pertenecen a ninguna zona densa. Esto lo hace bueno para clusters de forma irregular y para detectar outliers.</p>
+    <div class="visual">
+      <svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+        <g fill="var(--accent)">
+          <circle cx="40" cy="40" r="5"/><circle cx="55" cy="50" r="5"/><circle cx="35" cy="60" r="5"/><circle cx="60" cy="35" r="5"/>
+        </g>
+        <g fill="#f6ad55">
+          <circle cx="180" cy="90" r="5"/><circle cx="195" cy="80" r="5"/><circle cx="200" cy="100" r="5"/>
+        </g>
+        <circle cx="260" cy="30" r="5" fill="var(--text-dim)"/>
+        <text x="260" y="20" fill="var(--text-dim)" font-size="10" text-anchor="middle">ruido</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="mod">
+  <h2><span class="n">E</span> Herramientas de experimentación</h2>
+
+  <div class="concept" id="pickle-joblib">
+    <h3>Pickle vs Joblib: seguridad y eficiencia al guardar modelos</h3>
+    <div class="compare">
+      <div class="col"><h4>pickle</h4><p>Serializador estándar de Python para cualquier objeto. Genérico, pero ineficiente con arrays grandes de numpy y con riesgos de seguridad si se cargan archivos de fuentes no confiables.</p></div>
+      <div class="col"><h4>joblib</h4><p>Optimizado específicamente para objetos con muchos arrays de numpy (como modelos de scikit-learn). Guarda y carga más rápido y con archivos más livianos en ese caso de uso.</p></div>
+    </div>
+  </div>
+
+  <div class="concept" id="wandb">
+    <h3>Weights & Biases (W&amp;B): alternativa visual a MLflow</h3>
+    <p>Es una plataforma para trackear experimentos de ML en la nube: métricas, hiperparámetros, gráficas en vivo y comparación entre corridas, con un dashboard colaborativo. Cumple un rol similar al de MLflow, pero con más énfasis en visualización interactiva y colaboración en equipo.</p>
+  </div>
+</section>
+
+    <div class="footnav">
+      <a href="index.html">&larr; Volver al índice general</a>
+      <a href="modulo1.html">&larr; Modulo1</a> &nbsp;|&nbsp; <a href="modulo3.html">Siguiente: Modulo3 &rarr;</a>
+    </div>
+  </main>
+</div>
+<script>
+  const burger = document.getElementById('burgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  burger?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.querySelectorAll('nav.sidebar a').forEach(a=>{
+    a.addEventListener('click', ()=> sidebar.classList.remove('open'));
+  });
+  const links = document.querySelectorAll('nav.sidebar a[href^="#"]');
+  const targets = Array.from(links).map(l=>document.querySelector(l.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const match = document.querySelector(`nav.sidebar a[href="#${e.target.id}"]`);
+        if(match) match.classList.add('active');
+      }
+    });
+  }, {rootMargin:"-20% 0px -70% 0px"});
+  targets.forEach(t=>io.observe(t));
+  document.addEventListener('DOMContentLoaded', function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\(", right: "\\)", display: false}
+      ]
+    });
+  });
+</script>
+</body>
+</html>
