@@ -2,556 +2,434 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<title>Teleprompter · Optimizadores: SGD, Momentum y Adam</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>OPTIMIZADORES · SGD, MOMENTUM Y ADAM · Presentador/a</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg-0:      #071229;
-    --bg-1:      #0b1d3f;
-    --bg-2:      #123063;
-    --panel:     #10254b;
-    --line:      rgba(255,255,255,0.10);
-    --text:      #eef3fb;
-    --text-dim:  #9db2d6;
-    --text-faint:#5d739e;
-
-    --cold:   #22d3c9;
-    --warm:   #f5c542;
-    --violet: #8c7bff;
-    --danger: #ff6b6b;
-
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --bg-deep:#050a1a;
+    --bg-mid:#0b1638;
+    --bg-royal:#15277a;
+    --accent-cyan:#5fd4ff;
+    --accent-gold:#ffcf6b;
+    --text-primary:#eef3ff;
+    --text-muted:#8fa3d1;
+    --card-bg:rgba(255,255,255,0.045);
+    --card-border:rgba(150,175,230,0.18);
+    --track:rgba(150,175,230,0.18);
+    --ok:#5fd4ff;
+    --warn:#ffcf6b;
+    --over:#ff8686;
   }
-
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body{ height:100%; margin:0; overscroll-behavior:none; }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:#01030a;
+    font-family:'Inter',sans-serif;
+    color:var(--text-primary);
+    overflow:hidden;
+  }
   body{
-    background:var(--bg-0);
-    color:var(--text);
-    font-family:'Inter', sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  button{ font-family:inherit; cursor:pointer; }
-  button:focus-visible{ outline:2px solid var(--cold); outline-offset:2px; }
-  @media (prefers-reduced-motion: reduce){ *{ scroll-behavior:auto !important; } }
-
-  /* ============ Escenario 9:16 ============ */
-  #viewer{
-    position:fixed; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    background:#000;
+    display:flex;align-items:center;justify-content:center;
   }
   .stage{
     position:relative;
-    aspect-ratio:9/16;
-    height:min(100vh, 177.78vw);
-    width:min(100vw, 56.25vh);
-    background:radial-gradient(120% 90% at 50% 0%, var(--bg-2) 0%, var(--bg-1) 46%, var(--bg-0) 100%);
+    width:100vw;height:100vh;
+    max-width:calc(100vh * 9 / 16);
+    max-height:100vh;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(95,212,255,0.14), transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(255,207,107,0.08), transparent 45%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 45%, var(--bg-royal) 100%);
     overflow:hidden;
-    box-shadow:0 30px 90px rgba(0,0,0,0.55);
-  }
-
-  /* ============ Barra superior ============ */
-  .topbar{
-    position:absolute; top:0; left:0; right:0;
-    padding:calc(1.05rem + var(--safe-top)) 1.15rem 0.75rem;
-    display:flex; align-items:center; justify-content:space-between;
-    gap:0.6rem;
-    z-index:5;
-    background:linear-gradient(180deg, rgba(7,18,41,0.92) 0%, rgba(7,18,41,0.0) 100%);
-  }
-  .topbar .brand{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.62rem;
-    letter-spacing:0.1em;
-    text-transform:uppercase;
-    color:var(--text-faint);
-  }
-  .topbar .slide-tag{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.68rem;
-    color:var(--cold);
-    letter-spacing:0.06em;
-    background:rgba(34,211,201,0.10);
-    border:1px solid rgba(34,211,201,0.28);
-    padding:0.28em 0.62em;
-    border-radius:99px;
-    white-space:nowrap;
-  }
-
-  /* ============ Progreso ============ */
-  .progress-track{
-    position:absolute; top:calc(2.55rem + var(--safe-top)); left:1.15rem; right:1.15rem;
-    height:3px; border-radius:99px; background:rgba(255,255,255,0.08); z-index:5;
-    overflow:hidden;
-  }
-  .progress-fill{
-    height:100%;
-    background:linear-gradient(90deg, var(--danger), var(--violet), var(--cold), var(--warm));
-    transition:width .25s ease;
-  }
-
-  /* ============ Paginas de notas ============ */
-  .notes-pager{
-    position:absolute; inset:0;
     display:flex;
-    width:100%; height:100%;
+    flex-direction:column;
+    box-shadow:0 0 80px rgba(0,0,0,0.6);
   }
-  .page{
-    flex:0 0 100%;
-    width:100%; height:100%;
-    display:flex; flex-direction:column;
-    padding:calc(4.6rem + var(--safe-top)) 1.3rem calc(6.4rem + var(--safe-bottom));
-    overflow-y:auto;
-    scroll-behavior:smooth;
-    -webkit-overflow-scrolling:touch;
+  @media (min-aspect-ratio: 9/16){
+    .stage{ height:100vh; width:calc(100vh * 9/16); }
   }
-  .page::-webkit-scrollbar{ width:3px; }
-  .page::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.14); border-radius:99px; }
+  @media (max-aspect-ratio: 9/16){
+    .stage{ width:100vw; height:calc(100vw * 16/9); }
+  }
 
-  .page-eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.66rem;
-    letter-spacing:0.12em;
-    text-transform:uppercase;
-    color:var(--warm);
-    display:flex; align-items:center; gap:0.55em;
-    margin-bottom:0.5em;
+  /* starfield */
+  .stars, .stars2{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
   }
-  .page-eyebrow::before{ content:""; width:1.3em; height:1px; background:var(--warm); opacity:0.6; }
+  .stars{
+    background-image:
+      radial-gradient(1.5px 1.5px at 10% 20%, #cfe6ff 100%, transparent),
+      radial-gradient(1px 1px at 30% 65%, #cfe6ff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 70% 30%, #ffffff 100%, transparent),
+      radial-gradient(1px 1px at 85% 80%, #cfe6ff 100%, transparent),
+      radial-gradient(1px 1px at 50% 10%, #ffffff 100%, transparent),
+      radial-gradient(1.5px 1.5px at 60% 90%, #cfe6ff 100%, transparent),
+      radial-gradient(1px 1px at 15% 85%, #ffffff 100%, transparent),
+      radial-gradient(1px 1px at 92% 45%, #cfe6ff 100%, transparent);
+    opacity:0.55;
+    animation:twinkle 6s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:0.35;}
+    50%{opacity:0.75;}
+  }
 
-  .page-title{
-    font-family:'Space Grotesk', sans-serif;
+  /* header */
+  .head{
+    position:relative;z-index:2;
+    padding:18px 20px 10px;
+    flex:0 0 auto;
+  }
+  .constellation{
+    display:flex;align-items:center;gap:6px;margin-bottom:14px;
+  }
+  .cdot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--track);
+    flex:0 0 auto;
+    transition:all .35s ease;
+  }
+  .cline{
+    height:1px;flex:1 1 auto;
+    background:var(--track);
+  }
+  .cdot.done{ background:var(--accent-cyan); box-shadow:0 0 6px var(--accent-cyan); }
+  .cdot.active{ background:var(--accent-gold); box-shadow:0 0 8px var(--accent-gold); transform:scale(1.4); }
+  .cline.done{ background:linear-gradient(90deg, var(--accent-cyan), var(--accent-cyan)); }
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--accent-cyan); opacity:0.85;
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .eyebrow span.tag{color:var(--text-muted);}
+  h1.speaker{
+    font-family:'Space Grotesk',sans-serif;
     font-weight:700;
-    font-size:1.32rem;
-    line-height:1.2;
-    margin:0 0 0.9em 0;
-    color:var(--text);
+    font-size:26px;
+    margin:4px 0 2px;
+    line-height:1.15;
   }
-  .page-title .accent{ color:var(--cold); }
+  .role{
+    font-size:13px;color:var(--text-muted);
+    margin-bottom:2px;
+  }
 
-  .page-notes{
-    font-size:var(--note-size, 1.14rem);
+  /* main content */
+  .content{
+    position:relative;z-index:2;
+    flex:1 1 auto;
+    padding:6px 20px 14px;
+    display:flex;flex-direction:column;
+    min-height:0;
+  }
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:18px;
+    padding:20px 20px 16px;
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    backdrop-filter:blur(6px);
+  }
+  .slide-meta{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:10px;
+  }
+  .slide-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px;font-weight:600;
+    color:var(--text-primary);
+    line-height:1.25;
+  }
+  .slide-time{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--accent-gold);
+    border:1px solid rgba(255,207,107,0.35);
+    padding:2px 8px;border-radius:20px;
+    white-space:nowrap;margin-left:10px;flex:0 0 auto;
+  }
+  .script{
+    font-size:17px;
     line-height:1.62;
-    color:var(--text);
-    font-weight:500;
+    color:var(--text-primary);
+    overflow-y:auto;
+    flex:1 1 auto;
+    padding-right:4px;
+    scrollbar-width:thin;
+    scrollbar-color:var(--accent-cyan) transparent;
   }
-  .page-notes p{ margin:0 0 1em 0; }
-  .page-notes b{ color:var(--warm); font-weight:700; }
-  .page-notes .beat{
-    display:block;
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.66rem;
-    letter-spacing:0.08em;
-    text-transform:uppercase;
-    color:var(--text-faint);
-    margin:1.1em 0 0.35em;
-  }
-  .page-notes .cue{
+  .script::-webkit-scrollbar{width:4px;}
+  .script::-webkit-scrollbar-thumb{background:rgba(95,212,255,0.4);border-radius:4px;}
+  .script p{margin:0 0 12px;}
+  .script p:last-child{margin-bottom:0;}
+  .script b{color:var(--accent-cyan);font-weight:600;}
+  .script .cue{
     display:inline-block;
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.68rem;
-    color:var(--cold);
-    background:rgba(34,211,201,0.08);
-    border:1px solid rgba(34,211,201,0.22);
-    border-radius:6px;
-    padding:0.18em 0.5em;
-    margin-bottom:0.6em;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--bg-deep);
+    background:var(--accent-gold);
+    padding:1px 7px;border-radius:5px;
+    margin:0 2px;
+    vertical-align:2px;
+    letter-spacing:0.02em;
+  }
+  .bullets{list-style:none;margin:10px 0 0;padding:0;}
+  .bullets li{
+    position:relative;padding-left:16px;margin-bottom:8px;
+    font-size:15px;color:var(--text-muted);line-height:1.4;
+  }
+  .bullets li::before{
+    content:"";position:absolute;left:0;top:7px;
+    width:5px;height:5px;border-radius:50%;
+    background:var(--accent-cyan);
   }
 
-  /* ============ Zonas de toque para pasar pagina ============ */
-  .tap-zone{ position:absolute; top:0; bottom:0; width:24%; z-index:3; }
-  .tap-zone.left{ left:0; } .tap-zone.right{ right:0; }
-
-  /* ============ Barra inferior de navegacion ============ */
-  .bottom-nav{
-    position:absolute; left:0; right:0; bottom:0;
-    padding:0.7rem 1rem calc(0.9rem + var(--safe-bottom));
-    display:flex; flex-direction:column; gap:0.55rem;
-    background:linear-gradient(0deg, rgba(7,18,41,0.96) 40%, rgba(7,18,41,0.0) 100%);
-    z-index:6;
+  /* footer / teleprompter nav */
+  .nav{
+    position:relative;z-index:3;
+    flex:0 0 auto;
+    padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg, rgba(5,10,26,0) 0%, rgba(2,6,18,0.65) 35%, rgba(2,6,18,0.9) 100%);
+    border-top:1px solid rgba(150,175,230,0.12);
+  }
+  .progressbar{
+    height:3px;width:100%;background:var(--track);
+    border-radius:3px;overflow:hidden;margin-bottom:12px;
+  }
+  .progressfill{
+    height:100%;
+    background:linear-gradient(90deg, var(--accent-cyan), var(--accent-gold));
+    width:0%;
+    transition:width .35s ease;
+  }
+  .navrow{
+    display:flex;align-items:center;gap:8px;
+  }
+  .navbtn{
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    width:52px;height:52px;border-radius:16px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--card-border);
+    color:var(--text-primary);
+    font-size:20px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .navbtn:active{transform:scale(0.94); background:rgba(255,255,255,0.12);}
+  .navbtn.disabled{opacity:0.25;pointer-events:none;}
+  .navcenter{
+    flex:1 1 auto;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .slidecount{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--text-muted);
+  }
+  .timerwrap{
+    display:flex;align-items:center;gap:8px;
+  }
+  .timer{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;font-weight:500;letter-spacing:0.03em;
+    color:var(--ok);
+    min-width:64px;text-align:center;
+  }
+  .timer.warn{color:var(--warn);}
+  .timer.over{color:var(--over);}
+  .timerbtn{
+    width:38px;height:38px;border-radius:12px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--card-border);
+    color:var(--text-primary);
+    font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .timerbtn:active{background:rgba(255,255,255,0.14);}
+  .budget{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;color:var(--text-muted);margin-top:1px;
   }
 
-  .nav-controls{
-    display:flex; align-items:center; justify-content:space-between; gap:0.5rem;
+  .swipehint{
+    position:absolute; z-index:1;
+    top:0;bottom:0;width:26%;
   }
-  .nav-btn{
-    display:flex; align-items:center; justify-content:center;
-    width:2.7rem; height:2.7rem; border-radius:50%;
-    background:var(--panel); border:1px solid var(--line); color:var(--text);
-    font-size:1.15rem;
-    transition:transform .1s ease, border-color .15s ease;
-  }
-  .nav-btn:active{ transform:scale(0.92); }
-  .nav-btn:hover{ border-color:var(--cold); }
-  .nav-btn:disabled{ opacity:0.3; }
-
-  .nav-center{ display:flex; flex-direction:column; align-items:center; gap:0.15rem; flex:1; }
-  .nav-counter{
-    font-family:'JetBrains Mono', monospace; font-size:0.74rem; color:var(--text-dim);
-  }
-  .nav-dots{ display:flex; gap:0.28rem; }
-  .nav-dot{
-    width:5px; height:5px; border-radius:50%; background:var(--line);
-    transition:background .2s ease, transform .2s ease;
-  }
-  .nav-dot.active{ background:var(--cold); transform:scale(1.5); }
-
-  .aux-controls{
-    display:flex; align-items:center; justify-content:center; gap:0.5rem;
-  }
-  .aux-btn{
-    display:flex; align-items:center; gap:0.4em;
-    background:transparent; border:1px solid var(--line); color:var(--text-dim);
-    border-radius:99px; padding:0.42em 0.85em; font-size:0.72rem;
-    font-family:'JetBrains Mono', monospace; letter-spacing:0.03em;
-  }
-  .aux-btn:hover{ border-color:var(--cold); color:var(--text); }
-  .aux-btn.on{ background:rgba(34,211,201,0.12); border-color:var(--cold); color:var(--cold); }
-  .font-controls{ display:flex; align-items:center; gap:0.35rem; }
-  .font-btn{
-    width:1.8rem; height:1.8rem; border-radius:8px;
-    background:transparent; border:1px solid var(--line); color:var(--text-dim);
-    font-family:'JetBrains Mono', monospace; font-size:0.85rem;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .font-btn:hover{ border-color:var(--cold); color:var(--text); }
-
-  @media (max-width:340px){
-    .aux-btn span.lbl{ display:none; }
-  }
+  .swipehint.left{left:0;}
+  .swipehint.right{right:0;}
 </style>
 </head>
 <body>
+<div class="stage" id="stage">
+  <div class="stars"></div>
 
-<div id="viewer">
-  <div class="stage" id="stage">
-
-    <div class="topbar">
-      <span class="brand">Teleprompter · Notas al orador</span>
-      <span class="slide-tag" id="slideTag">Diapositiva 01</span>
-    </div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-
-    <div class="notes-pager" id="pager">
-      <!-- Las paginas se inyectan por JS a partir de NOTES -->
-    </div>
-
-    <div class="tap-zone left" id="zoneLeft" aria-hidden="true"></div>
-    <div class="tap-zone right" id="zoneRight" aria-hidden="true"></div>
-
-    <div class="bottom-nav">
-      <div class="nav-controls">
-        <button class="nav-btn" id="prevBtn" aria-label="Diapositiva anterior">‹</button>
-        <div class="nav-center">
-          <span class="nav-counter mono" id="counterLabel">01 / 14</span>
-          <div class="nav-dots" id="navDots"></div>
-        </div>
-        <button class="nav-btn" id="nextBtn" aria-label="Siguiente diapositiva">›</button>
-      </div>
-      <div class="aux-controls">
-        <button class="aux-btn" id="autoScrollBtn">▶ <span class="lbl">Auto-scroll</span></button>
-        <div class="font-controls">
-          <button class="font-btn" id="fontMinus" aria-label="Reducir texto">A−</button>
-          <button class="font-btn" id="fontPlus" aria-label="Agrandar texto">A+</button>
-        </div>
-      </div>
-    </div>
-
+  <div class="head">
+    <div class="constellation" id="constellation"></div>
+    <div class="eyebrow"><span>OPTIMIZADORES · SGD, MOMENTUM Y ADAM</span><span class="tag">TEORÍA · 17 SLIDES</span></div>
+    <h1 class="speaker">Presentador/a</h1>
+    <div class="role">Optimizadores en Deep Learning — de SGD a Adam &nbsp;·&nbsp; presupuesto 13:00</div>
   </div>
+
+  <div class="content">
+    <div class="card">
+      <div class="slide-meta">
+        <div class="slide-title" id="slideTitle">—</div>
+        <div class="slide-time" id="slideTime">—</div>
+      </div>
+      <div class="script" id="slideScript">—</div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="progressbar"><div class="progressfill" id="progressFill"></div></div>
+    <div class="navrow">
+      <div class="navbtn" id="prevBtn" aria-label="Anterior">&#8592;</div>
+      <div class="navcenter">
+        <div class="timerwrap">
+          <div class="timerbtn" id="timerToggle">&#9654;</div>
+          <div class="timer" id="timerDisplay">00:00</div>
+          <div class="timerbtn" id="timerReset">&#8635;</div>
+        </div>
+        <div class="slidecount" id="slideCount">1 / N</div>
+      </div>
+      <div class="navbtn" id="nextBtn" aria-label="Siguiente">&#8594;</div>
+    </div>
+  </div>
+
+  <div class="swipehint left" id="swipeLeft"></div>
+  <div class="swipehint right" id="swipeRight"></div>
 </div>
 
 <script>
+const SLIDES = [{"t": 15, "title": "Apertura", "html": "<p><span class='cue'>SONRÍE, MIRÁ A LA SALA</span></p><p>Buenas a todos. Hoy les voy a contar por qué una red neuronal a veces simplemente no aprende, y cómo un solo cambio en la forma de ajustar sus pesos puede arreglar eso por completo.</p>"}, {"t": 30, "title": "El gancho: la cocinera", "html": "<p><span class='cue'>PAUSA UN SEGUNDO ANTES DE ARRANCAR</span></p><p>Imagínense una cocinera preparando la misma receta una y otra vez: la prueba, corrige la sazón, la vuelve a probar. Así es exactamente como entrena una red neuronal — prueba, corrige, vuelve a probar. Y la pregunta que nos va a guiar hoy es esta: ¿por qué un cocinero con más experiencia siempre le termina ganando al que corrige a ciegas? Esa diferencia tiene nombre, y se llama <b>optimizador</b>.</p>"}, {"t": 50, "title": "Equivalencias clave", "html": "<p><span class='cue'>[MOSTRÁ LA DIAPOSITIVA DE EQUIVALENCIAS]</span></p><p>Antes de arrancar, les dejo el mapa que vamos a usar durante toda la charla de hoy. La idea central es simple: entrenar una red neuronal se parece muchísimo a ajustar una receta, probándola una y otra vez hasta encontrar el punto justo. Estos son los cinco términos que vamos a usar como sinónimos:</p><ul class='bullets'><li><b>Plato final</b> = la red ya entrenada</li><li><b>Sazón que se corrige</b> = los pesos de la red</li><li><b>Probar y notar qué falta</b> = el gradiente</li><li><b>Tamaño de la cucharada</b> = el learning rate</li><li><b>Recordar la tendencia</b> = Momentum</li></ul><p>Con estos cinco términos alcanza para seguir absolutamente todo lo que viene, así que si en algún momento se pierden, vuelvan a este mapa.</p>"}, {"t": 45, "title": "Qué es un optimizador", "html": "<p>Pensemos en esa cocinera probando su receta. Cada vez que prueba, tiene que decidir tres cosas: <b>qué</b> corregir, <b>cuánto</b> corregir, y si decide mirando solo esta probada o si tiene <b>memoria</b> de las correcciones anteriores. Un optimizador es exactamente esa decisión, pero formalizada matemáticamente, número por número. Y acá va la idea que quiero que se lleven de esta parte de la charla: SGD, Momentum y Adam no son cosas completamente distintas entre sí, no son recetas separadas que compiten. Son la <b>misma receta de ajuste</b>, cada vez un poco más sofisticada, y cada una resolviendo el problema que la anterior dejó pendiente. Eso es literalmente el hilo conductor de todo lo que viene.</p>"}, {"t": 45, "title": "SGD, el aprendiz", "html": "<p><span class='cue'>[MOSTRÁ LA FÓRMULA DE SGD]</span></p><p>El primer cocinero de nuestra historia es SGD, el nombre corto de descenso de gradiente estocástico. Prueba el plato, nota algo puntual, y corrige con una cucharada de <b>tamaño fijo</b>. No recuerda absolutamente nada de la probada anterior, cada corrección arranca de cero. Es simple, es barato de calcular, y funciona razonablemente bien cuando la receta es sencilla y el error es parejo en todos lados. Pero tiene un problema grande: es puramente <b>reactivo</b>. No sabe hacia dónde venía corrigiendo en los últimos pasos, y usa exactamente la misma cuchara para todos los ingredientes de la receta, sin importar cuán sensible sea cada uno de ellos.</p>"}, {"t": 50, "title": "El límite: una sola cuchara", "html": "<p><span class='cue'>[SEÑALÁ EL GRÁFICO DEL VALLE ANGOSTO]</span></p><p>Pensemos en una receta con dos ingredientes bien distintos: la <b>sal</b>, con la que hay que ser delicado porque se nota con muy poquito, y el <b>picante</b>, que tolera cucharadas grandes sin arruinar nada de la preparación. Si la cuchara es grande, SGD se pasa de sal en cada corrección y <b>oscila</b> de un lado para el otro sin encontrar nunca el punto justo. Si la cuchara es chica, en cambio, tarda una eternidad en que se note siquiera un poquito el picante. El problema de fondo es este, y quiero que quede clarísimo: un solo tamaño de cuchara no puede ser el correcto para los dos ingredientes al mismo tiempo, por más que ajustemos su valor.</p>"}, {"t": 55, "title": "Momentum, la mano con memoria", "html": "<p><span class='cue'>[MOSTRÁ LA FÓRMULA DE MOMENTUM]</span></p><p>Acá aparece la primera mejora real de la historia: Momentum. La idea es que, en vez de corregir solo por lo que notamos en esta probada puntual, promediamos con la <b>tendencia</b> de las últimas correcciones que veníamos haciendo. Es como una cocinera con años de experiencia: si en las últimas probadas venía agregando sal de a poquito, de forma consistente, su mano ya sabe seguir en esa misma dirección, sin reaccionar de forma exagerada a un solo bocado raro que salió distinto. Las correcciones que se contradicen entre sí, mucha sal y después mucho ácido, se <b>cancelan</b> en el promedio, mientras que las correcciones consistentes se <b>refuerzan</b> cada vez más. El resultado final: llega antes al punto justo, y con exactamente la misma cuchara de siempre.</p>"}, {"t": 35, "title": "Todavía no alcanza", "html": "<p>Pero ojo, algo importante: Momentum mejora <b>hacia dónde</b> corregimos, no <b>cuánto</b> corregimos en cada ingrediente. Seguimos usando exactamente la misma cuchara para todos los ingredientes de la receta, sin distinción. Y en una receta real, cada ingrediente necesita su propio tamaño de ajuste, calibrado a su propia sensibilidad. Entonces la pregunta que nos queda pendiente, y que va a guiar la siguiente parte, es esta: ¿podemos lograr que cada ingrediente tenga su <b>propia cuchara</b>, calibrada automáticamente según cuánto se lo tuvo que corregir en el pasado?</p>"}, {"t": 60, "title": "La libreta: AdaGrad y RMSProp", "html": "<p><span class='cue'>[MOSTRÁ LAS DOS FÓRMULAS UNA AL LADO DE LA OTRA]</span></p><p>La primera respuesta seria a esa pregunta fue <b>AdaGrad</b>, publicada en 2011: la cocinera anota en una libreta cada corrección histórica de cada ingrediente, y calibra la cuchara de ese ingrediente según lo que anotó. Buena idea, sin dudas, pero con un problema serio: esa libreta <b>nunca se borra</b>, solo acumula anotaciones, receta tras receta, para siempre. Con el correr del tiempo, la cuchara se vuelve microscópica para absolutamente todo, y la cocinera termina dejando de corregir aunque el plato todavía lo necesite con urgencia. Un año después llegó la solución a ese problema puntual: <b>RMSProp</b> cambia esa libreta que nunca olvida por una <b>memoria reciente</b>, que solo pesa las últimas correcciones de cada ingrediente. La cuchara se recalibra sola, todo el tiempo, sin quedarse nunca sin margen de ajuste.</p>"}, {"t": 60, "title": "Adam, el chef maestro", "html": "<p><span class='cue'>[MOSTRÁ LAS CUATRO FÓRMULAS DE ADAM]</span></p><p>Y así llegamos al protagonista absoluto de la charla de hoy: <b>Adam</b>, publicado en el año 2014. La idea, una vez que ya tenemos todas las piezas anteriores sobre la mesa, es en realidad bastante simple: Adam es literalmente <b>Momentum más RMSProp</b>, combinados en una sola receta de ajuste. Por un lado, recuerda la tendencia de las correcciones recientes, exactamente igual que Momentum. Por otro lado, calibra una cuchara propia para cada ingrediente por separado, exactamente igual que RMSProp. Y encima le suma una corrección extra, para que las primeras probadas, cuando todavía no hay mucha información acumulada, no pesen de más en el resultado. El resultado final: cada ingrediente recibe un ajuste hecho a su propia medida, con dirección consistente y escala bien calibrada.</p>"}, {"t": 45, "title": "Por qué ganó Adam", "html": "<p>¿Por qué Adam terminó siendo la cuchara por defecto en casi todos los papers y frameworks modernos que existen? Primero, porque adapta el ajuste ingrediente por ingrediente, sin excepción. Segundo, porque hereda la memoria de tendencia de Momentum, así que no corrige a los tumbos. Tercero, porque no se queda sin margen de ajuste como le pasaba a la libreta de AdaGrad. Y cuarto, y esto es lo más importante: <b>no hace falta adivinar de antemano</b> el tamaño perfecto de cuchara para cada ingrediente. Adam se encarga de eso solo, automáticamente. Por eso hoy es, literalmente, el valor por defecto en la enorme mayoría de los proyectos de deep learning.</p>"}, {"t": 65, "title": "La cocina de muchas estaciones", "html": "<p><span class='cue'>[MOSTRÁ LA FILA DE ESTACIONES DE COCINA]</span></p><p>Ahora cambiemos de eje por un momento, porque hay un segundo problema clásico en esta historia, y es bien distinto del que veníamos hablando hasta acá. Imagínense una cocina con varias estaciones organizadas en cadena: el caldo base, la reducción, la salsa, el montaje, y el emplatado final. El comensal prueba el plato ya terminado y dice <b>«le falta sal»</b>. Ese mensaje tiene que viajar hacia atrás, estación por estación, hasta llegar de vuelta al caldo base. Pero en cada estación por la que pasa, el mensaje se repite y <b>pierde intensidad</b> — exactamente como el juego del teléfono descompuesto que jugábamos de chicos. Para cuando ese mensaje llega al caldo base, casi no queda corrección alguna, y ese cocinero de la primera estación sigue preparando exactamente lo mismo, receta tras receta, sin mejorar nunca. Esto es, ni más ni menos, lo que en redes profundas llamamos el <b>gradiente que desaparece</b>.</p>"}, {"t": 50, "title": "Por qué se diluye el mensaje", "html": "<p><span class='cue'>[MOSTRÁ LA FÓRMULA DE LA REGLA DE LA CADENA]</span></p><p>Backpropagation es, ni más ni menos, ese mismo mensaje viajando estación por estación hacia atrás, multiplicándose en cada paso por cuánto deja pasar cada una de ellas. El problema concreto es que la activación clásica, la sigmoide, tiene una derivada con un <b>techo de apenas 0.25</b>, como máximo. Multiplicar cuatro o cinco de esos techos de 0.25, uno detrás del otro, en cadena, da como resultado un mensaje casi inaudible para cuando llega a destino. El caldo base, es decir, la primera capa de toda la red, casi no recibe corrección alguna, y queda <b>congelado</b> en su estado inicial — nunca llega a aprender a mejorar su parte de la receta.</p>"}, {"t": 55, "title": "Cómo Adam ayuda (y qué no arregla)", "html": "<p>Buena pregunta para hacerle a la sala en este punto: <span class='cue'>PAUSÁ Y MIRÁ AL PÚBLICO</span> ¿Adam resuelve por completo el problema del gradiente que desaparece? La respuesta corta, y esto es importante, es que lo <b>mitiga</b>, pero no lo resuelve del todo. Si el caldo base viene recibiendo correcciones chicas de forma consistente a lo largo del entrenamiento, Adam agranda su cuchara para compensar esa debilidad, en vez de dejar que la corrección colapse a prácticamente nada. Pero ojo, esto es clave: Adam <b>no achica la cadena de estaciones</b> en sí misma. El mensaje real que llega al caldo base sigue siendo débil de por sí, Adam simplemente lo aprovecha mejor de lo que lo haría SGD. Por eso, en la práctica moderna, siempre se lo combina con activaciones ReLU, buena inicialización de pesos, normalización por capas, y conexiones residuales.</p>"}, {"t": 45, "title": "Conexión con el laboratorio", "html": "<p><span class='cue'>[MOSTRÁ EL NOTEBOOK SI VAS A HACER DEMO EN VIVO]</span></p><p>Y todo esto que acabamos de ver no se queda solamente en la teoría. Lo comprobamos con una red neuronal armada <b>desde cero, con NumPy</b>, sin ninguna caja negra de por medio, entrenada sobre el dataset público de flores Iris. Medimos la norma del gradiente <b>capa por capa</b>, en vivo, mientras la red entrenaba delante nuestro. Y el resultado fue exactamente el que predice la teoría que acabamos de repasar: con SGD puro, la primera capa recibió un mensaje <b>órdenes de magnitud</b> más débil que la última capa de la red. Con Adam, en cambio, esa brecha se achicó notoriamente, y la red aprendió más rápido y de forma bastante más estable.</p>"}, {"t": 40, "title": "Síntesis en una tabla", "html": "<p><span class='cue'>[MOSTRÁ LA TABLA COMPARATIVA]</span></p><p>Para cerrar esta parte de teoría, les dejo la síntesis en tres cocineros, tres formas bien distintas de corregir la misma receta. <b>SGD</b>: sin memoria de tendencia, sin cuchara propia por ingrediente, y con un riesgo bastante alto de arruinar el plato en cada corrección. <b>Momentum</b>: ya con memoria de tendencia, pero todavía sin una cuchara propia para cada ingrediente. Y <b>Adam</b>: memoria de tendencia y cuchara propia por ingrediente, las dos cosas a la vez — por eso es, hoy en día, la combinación que gana en la enorme mayoría de los escenarios prácticos que existen.</p>"}, {"t": 35, "title": "Cierre y preguntas", "html": "<p><span class='cue'>PAUSA LARGA, SONREÍ</span></p><p>Para resumir absolutamente todo en una sola frase: pasamos de un mensaje que se diluye camino a la primera estación, a un cocinero que aprende a calibrar cada cuchara por su propia cuenta, sin que nadie se la tenga que calibrar a mano de antemano. Muchísimas gracias por la atención de todos. Quedo abierto a preguntas, y el notebook interactivo con todo el código queda disponible para que lo exploren después con sus propios datos.</p>"}];
+const TOTAL_BUDGET = 780; // segundos totales del bloque
+
+let cum = [];
 (function(){
-  "use strict";
-
-  /* ============================================================
-     NOTAS AL ORADOR
-     Un bloque por cada diapositiva de la presentación
-     "Optimizadores: de SGD con Momentum a Adam".
-     Los <span class="cue"> son acotaciones para vos, no se leen.
-  ============================================================ */
-  const NOTES = [
-    {
-      tag: "01 · Portada",
-      title: "Arranque",
-      html: `
-        <span class="cue">Pausa. Mirá a la sala antes de hablar.</span>
-        <p>Buenas a todos. Hoy vamos a hablar de algo que suena técnico pero que en realidad es súper intuitivo: <b>cómo aprende una red neuronal</b>, y por qué a veces simplemente... no aprende.</p>
-        <p>El hilo conductor va a ser una pregunta: ¿por qué el optimizador que usa <b>todo el mundo hoy</b>, que se llama Adam, terminó reemplazando al descenso de gradiente clásico?</p>
-        <span class="beat">Transición</span>
-        <p>Vamos a verlo en tres capas: la teoría, la intuición visual, y después un caso práctico con una red entrenada desde cero.</p>
-      `
-    },
-    {
-      tag: "02 · Qué es un optimizador",
-      title: "La idea base",
-      html: `
-        <p>Empecemos por la definición más simple posible. Una red aprende ajustando sus pesos para minimizar una función de pérdida.</p>
-        <p>El <b>optimizador</b> es, literalmente, la regla que decide tres cosas en cada paso: <b>hacia dónde</b> mover los pesos, <b>cuánto</b> moverlos, y si usa o no <b>memoria</b> de los pasos anteriores.</p>
-        <span class="cue">Señalá la fórmula si está en pantalla.</span>
-        <p>Toda la historia que vamos a contar hoy es la historia de ir mejorando esa regla — SGD, Momentum, RMSProp y finalmente Adam son solo variaciones de la misma idea base.</p>
-      `
-    },
-    {
-      tag: "03 · SGD",
-      title: "Descenso de gradiente",
-      html: `
-        <p>El punto de partida es el descenso de gradiente estocástico, SGD. En cada paso mira <b>únicamente el gradiente actual</b> y da un paso proporcional a él.</p>
-        <p>Es simple, barato de calcular, fácil de entender. Funciona bien en superficies de pérdida "bien portadas".</p>
-        <span class="cue">Bajá el ritmo acá, es el concepto ancla de toda la charla.</span>
-        <p>Pero tiene dos límites importantes: es <b>miope</b> — no sabe hacia dónde veníamos moviéndonos — y usa un <b>único learning rate global</b> para millones de parámetros distintos.</p>
-      `
-    },
-    {
-      tag: "04 · El límite de SGD",
-      title: "El valle angosto",
-      html: `
-        <p>Ahora la pregunta interesante: ¿qué pasa cuando la pérdida no es una superficie simple, sino un <b>valle angosto y curvo</b>? Esto es súper común en redes reales.</p>
-        <p>Con un learning rate <b>alto</b>, SGD rebota de pared a pared del valle — zigzaguea, oscila, a veces hasta diverge.</p>
-        <p>Con un learning rate <b>bajo</b>, avanza tan lento que prácticamente no llega a ningún lado en un tiempo razonable.</p>
-        <span class="cue">Podés mostrar el notebook acá si tenés la demo a mano.</span>
-        <p>No existe un único learning rate que funcione bien en todas las direcciones al mismo tiempo. Ese es el problema que Momentum viene a resolver.</p>
-      `
-    },
-    {
-      tag: "05 · Momentum",
-      title: "SGD + Momentum",
-      html: `
-        <p>La primera evolución: en vez de usar el gradiente crudo, acumulamos un <b>promedio móvil</b> de los gradientes recientes. Una especie de velocidad, de inercia.</p>
-        <span class="cue">Analogía física, decila despacio, es la que más se recuerda.</span>
-        <p>Pensalo como una bola pesada rodando por el valle. Las oscilaciones perpendiculares al valle se cancelan entre sí — van en direcciones opuestas y se promedian. El avance a lo largo del valle, en cambio, se refuerza, porque es consistente entre pasos.</p>
-        <p>Resultado: converge más rápido y con menos zigzagueo, usando exactamente el mismo gradiente crudo que SGD.</p>
-      `
-    },
-    {
-      tag: "06 · Todavía no alcanza",
-      title: "El límite de Momentum",
-      html: `
-        <p>Momentum mejora la <b>dirección</b> del paso. Pero seguimos escalando todos los parámetros con el mismo learning rate global.</p>
-        <p>En una red real, distintos parámetros necesitan pasos de tamaño muy distinto: los que tienen gradientes grandes y frecuentes deberían moverse con pasos chicos; los que tienen gradientes pequeños y raros deberían moverse con pasos grandes.</p>
-        <span class="cue">Esta es la pregunta bisagra de toda la charla, dejala resonar un segundo.</span>
-        <p>¿Podemos lograr que cada parámetro tenga, en la práctica, <b>su propio learning rate</b>, ajustado automáticamente según su propia historia de gradientes?</p>
-      `
-    },
-    {
-      tag: "07 · AdaGrad → RMSProp",
-      title: "El puente",
-      html: `
-        <p>La primera respuesta a esa pregunta fue AdaGrad, en 2011: divide el paso por la raíz de la <b>suma acumulada</b> de gradientes al cuadrado.</p>
-        <p>El problema es que esa suma solo crece. Con el tiempo el denominador se vuelve gigante y el paso efectivo tiende a cero — el entrenamiento se frena antes de converger.</p>
-        <span class="cue">Podés contar esto casi como un chiste: "buena idea, mal implementada".</span>
-        <p>RMSProp, un año después, arregla exactamente eso: cambia la suma acumulada por un <b>promedio móvil</b>. El denominador ya no explota, se adapta a la magnitud reciente del gradiente.</p>
-      `
-    },
-    {
-      tag: "08 · Adam",
-      title: "La síntesis",
-      html: `
-        <p>Y acá llegamos al protagonista: Adam, 2014. La idea es simple una vez que tenés las piezas anteriores — es literalmente <b>Momentum + RMSProp</b>.</p>
-        <p>Un primer momento que captura la <b>dirección</b>, como Momentum. Un segundo momento que captura la <b>escala</b> típica del gradiente, como RMSProp. Y una corrección de sesgo porque ambos arrancan en cero.</p>
-        <span class="cue">Si hay fórmulas en pantalla, dales unos segundos de silencio para que la audiencia las lea.</span>
-        <p>El resultado final: cada parámetro recibe un paso normalizado según su propia historia — dirección consistente, magnitud adaptada.</p>
-      `
-    },
-    {
-      tag: "09 · Por qué ganó",
-      title: "El estándar de la industria",
-      html: `
-        <p>¿Por qué Adam terminó siendo el optimizador por defecto en casi todos los papers y frameworks modernos?</p>
-        <p>Adapta el paso por parámetro. Hereda la inercia de Momentum. No explota como AdaGrad. Y es <b>robusto</b> a la elección del learning rate — converge razonablemente bien incluso sin ajuste fino extremo.</p>
-        <span class="cue">Frase de cierre de bloque, decila con calma.</span>
-        <p>Le da a cada parámetro su propia prudencia: avanza rápido donde el terreno lo permite, y con cautela donde el gradiente ha sido errático.</p>
-      `
-    },
-    {
-      tag: "10 · Vanishing gradient",
-      title: "El otro problema",
-      html: `
-        <p>Cambiemos de eje por un momento. Hay un segundo problema clásico en redes profundas: el gradiente que <b>desaparece</b>.</p>
-        <p>Backpropagation calcula el gradiente de una capa temprana multiplicando las derivadas de todas las capas que vienen después — la regla de la cadena.</p>
-        <span class="cue">Si tenés el número a mano, decilo despacio: "cero coma veinticinco".</span>
-        <p>La derivada de la sigmoide tiene un <b>máximo de 0.25</b>. Multiplicar cuatro o cinco números menores o iguales a eso da un producto diminuto. Las primeras capas reciben una señal de gradiente casi nula y quedan casi congeladas en su inicialización aleatoria.</p>
-      `
-    },
-    {
-      tag: "11 · Adam mitiga",
-      title: "Lo que Adam sí y no resuelve",
-      html: `
-        <p>Buena pregunta para la audiencia: ¿Adam soluciona el vanishing gradient?</p>
-        <span class="cue">Dejá un segundo de suspenso antes de responder.</span>
-        <p>Lo <b>mitiga</b>, no lo resuelve. Si un parámetro tiene gradientes consistentemente chicos, Adam reescala el paso hacia un tamaño razonable en vez de dejar que colapse a cero como en SGD puro.</p>
-        <p>Pero la causa raíz sigue ahí: la sigmoide se sigue saturando. Por eso, en la práctica moderna, se combina Adam con ReLU, buena inicialización, batch normalization y conexiones residuales.</p>
-      `
-    },
-    {
-      tag: "12 · Tabla comparativa",
-      title: "Resumen",
-      html: `
-        <p>Antes de pasar a la parte práctica, un resumen rápido de los tres optimizadores que vimos.</p>
-        <p><b>SGD</b>: sin memoria, sin adaptación por parámetro, muy sensible al learning rate.</p>
-        <p><b>Momentum</b>: con memoria de dirección, todavía sin adaptación por parámetro.</p>
-        <p><b>Adam</b>: memoria de dirección <i>y</i> adaptación de escala por parámetro — la combinación gana en casi todos los escenarios prácticos.</p>
-        <span class="cue">Buen momento para preguntas cortas antes de pasar al notebook.</span>
-      `
-    },
-    {
-      tag: "13 · Conexión con el laboratorio",
-      title: "Lo que vimos en el notebook",
-      html: `
-        <p>Todo esto lo comprobamos empíricamente en el laboratorio interactivo: una red neuronal armada desde cero con NumPy, entrenada sobre el dataset público Iris — el clásico de flores, comparando versicolor contra virginica.</p>
-        <p>Medimos la norma del gradiente <b>capa por capa</b>, en vivo, durante el entrenamiento.</p>
-        <span class="cue">Si vas a mostrar el notebook en vivo, este es el momento de cambiar de pantalla.</span>
-        <p>Con SGD puro, el gradiente de la primera capa quedó órdenes de magnitud por debajo del de la última capa. Con Adam, esa brecha se redujo notablemente y la red convergió más rápido y de forma más estable.</p>
-      `
-    },
-    {
-      tag: "14 · Cierre",
-      title: "Cierre y preguntas",
-      html: `
-        <p>Para resumir todo en una frase: pasamos de un gradiente que <b>desaparece</b> a un optimizador que <b>se adapta</b>.</p>
-        <span class="cue">Pausa larga. Sonreí. Abrí la sala a preguntas.</span>
-        <p>Muchas gracias. Quedo abierta a preguntas, y el notebook interactivo queda disponible para que lo exploren con sus propios datos.</p>
-      `
-    }
-  ];
-
-  /* ============================================================
-     RENDER
-  ============================================================ */
-  const pager = document.getElementById("pager");
-  const navDots = document.getElementById("navDots");
-
-  NOTES.forEach((n, i) => {
-    const page = document.createElement("div");
-    page.className = "page";
-    page.id = "page-" + i;
-    page.innerHTML =
-      '<div class="page-eyebrow">' + n.tag + '</div>' +
-      '<h1 class="page-title">' + n.title + '</h1>' +
-      '<div class="page-notes">' + n.html + '</div>';
-    pager.appendChild(page);
-
-    const dot = document.createElement("span");
-    dot.className = "nav-dot";
-    navDots.appendChild(dot);
-  });
-
-  const pages = Array.from(document.querySelectorAll(".page"));
-  const dots = Array.from(document.querySelectorAll(".nav-dot"));
-  const total = pages.length;
-  let current = 0;
-
-  const slideTag = document.getElementById("slideTag");
-  const counterLabel = document.getElementById("counterLabel");
-  const progressFill = document.getElementById("progressFill");
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-  const stage = document.getElementById("stage");
-
-  function pad(n){ return n < 10 ? "0" + n : "" + n; }
-
-  function render(){
-    pages.forEach((p, i) => { p.style.display = (i === current) ? "flex" : "none"; });
-    dots.forEach((d, i) => d.classList.toggle("active", i === current));
-    slideTag.textContent = "Diapositiva " + pad(current + 1);
-    counterLabel.textContent = pad(current + 1) + " / " + pad(total);
-    progressFill.style.width = ((current + 1) / total * 100) + "%";
-    prevBtn.disabled = current === 0;
-    nextBtn.disabled = current === total - 1;
-    stopAutoScroll();
-  }
-
-  function goTo(i){
-    if(i < 0 || i >= total) return;
-    current = i;
-    render();
-  }
-
-  prevBtn.addEventListener("click", () => goTo(current - 1));
-  nextBtn.addEventListener("click", () => goTo(current + 1));
-  document.getElementById("zoneLeft").addEventListener("click", () => goTo(current - 1));
-  document.getElementById("zoneRight").addEventListener("click", () => goTo(current + 1));
-
-  document.addEventListener("keydown", (e) => {
-    if(["ArrowRight","PageDown"].includes(e.key)) goTo(current + 1);
-    if(["ArrowLeft","PageUp"].includes(e.key)) goTo(current - 1);
-    if(e.key === "Home") goTo(0);
-    if(e.key === "End") goTo(total - 1);
-    if(e.key === " "){ e.preventDefault(); toggleAutoScroll(); }
-  });
-
-  /* Swipe vertical / horizontal para pasar de diapositiva */
-  let touchStartX = null, touchStartY = null;
-  stage.addEventListener("touchstart", (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive:true });
-  stage.addEventListener("touchend", (e) => {
-    if(touchStartX === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)){
-      goTo(current + (dx < 0 ? 1 : -1));
-    }
-    touchStartX = null; touchStartY = null;
-  }, { passive:true });
-
-  /* ============================================================
-     AUTO-SCROLL (util cuando la nota es larga)
-  ============================================================ */
-  const autoScrollBtn = document.getElementById("autoScrollBtn");
-  let scrollRAF = null;
-  let scrolling = false;
-
-  function stepScroll(){
-    const page = pages[current];
-    page.scrollTop += 0.55;
-    if(page.scrollTop + page.clientHeight >= page.scrollHeight - 2){
-      stopAutoScroll();
-      return;
-    }
-    scrollRAF = requestAnimationFrame(stepScroll);
-  }
-  function startAutoScroll(){
-    scrolling = true;
-    autoScrollBtn.classList.add("on");
-    autoScrollBtn.innerHTML = '❚❚ <span class="lbl">Pausar</span>';
-    scrollRAF = requestAnimationFrame(stepScroll);
-  }
-  function stopAutoScroll(){
-    scrolling = false;
-    autoScrollBtn.classList.remove("on");
-    autoScrollBtn.innerHTML = '▶ <span class="lbl">Auto-scroll</span>';
-    if(scrollRAF) cancelAnimationFrame(scrollRAF);
-  }
-  function toggleAutoScroll(){ scrolling ? stopAutoScroll() : startAutoScroll(); }
-  autoScrollBtn.addEventListener("click", toggleAutoScroll);
-
-  /* ============================================================
-     TAMAÑO DE TEXTO
-  ============================================================ */
-  let noteSize = 1.14;
-  function applyFontSize(){
-    document.documentElement.style.setProperty("--note-size", noteSize + "rem");
-  }
-  document.getElementById("fontPlus").addEventListener("click", () => {
-    noteSize = Math.min(1.7, noteSize + 0.08);
-    applyFontSize();
-  });
-  document.getElementById("fontMinus").addEventListener("click", () => {
-    noteSize = Math.max(0.86, noteSize - 0.08);
-    applyFontSize();
-  });
-
-  render();
+  let acc = 0;
+  SLIDES.forEach(s=>{ acc += s.t; cum.push(acc); });
 })();
-</script>
 
+let idx = 0;
+let elapsed = 0;
+let running = false;
+let timerHandle = null;
+
+const $ = (id)=>document.getElementById(id);
+const constellation = $('constellation');
+
+function buildConstellation(){
+  constellation.innerHTML = '';
+  SLIDES.forEach((s,i)=>{
+    const dot = document.createElement('div');
+    dot.className = 'cdot';
+    dot.dataset.i = i;
+    constellation.appendChild(dot);
+    if(i < SLIDES.length-1){
+      const line = document.createElement('div');
+      line.className='cline';
+      line.dataset.i = i;
+      constellation.appendChild(line);
+    }
+  });
+}
+
+function renderSlide(){
+  const s = SLIDES[idx];
+  $('slideTitle').textContent = s.title;
+  $('slideTime').textContent = '~' + s.t + 's';
+  $('slideScript').innerHTML = s.html;
+  $('slideScript').scrollTop = 0;
+  $('slideCount').textContent = (idx+1) + ' / ' + SLIDES.length;
+  $('prevBtn').classList.toggle('disabled', idx===0);
+  $('nextBtn').classList.toggle('disabled', idx===SLIDES.length-1);
+
+  document.querySelectorAll('.cdot').forEach((d)=>{
+    const i = +d.dataset.i;
+    d.classList.toggle('done', i < idx);
+    d.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.cline').forEach((l)=>{
+    const i = +l.dataset.i;
+    l.classList.toggle('done', i < idx);
+  });
+
+  const target = cum[idx];
+  const pct = Math.min(100, (target / TOTAL_BUDGET) * 100);
+  $('progressFill').style.width = pct + '%';
+}
+
+function fmt(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = Math.floor(sec%60).toString().padStart(2,'0');
+  return m+':'+s;
+}
+
+function tickTimer(){
+  elapsed += 1;
+  $('timerDisplay').textContent = fmt(elapsed);
+  const target = cum[idx];
+  const diff = elapsed - target;
+  const disp = $('timerDisplay');
+  disp.classList.remove('warn','over');
+  if(diff > 15){ disp.classList.add('over'); }
+  else if(diff > 0){ disp.classList.add('warn'); }
+}
+
+$('timerToggle').addEventListener('click', ()=>{
+  running = !running;
+  $('timerToggle').innerHTML = running ? '&#10074;&#10074;' : '&#9654;';
+  if(running){
+    timerHandle = setInterval(tickTimer, 1000);
+  } else {
+    clearInterval(timerHandle);
+  }
+});
+$('timerReset').addEventListener('click', ()=>{
+  elapsed = 0;
+  $('timerDisplay').textContent='00:00';
+  $('timerDisplay').classList.remove('warn','over');
+});
+
+function goTo(n){
+  if(n<0 || n>=SLIDES.length) return;
+  idx = n;
+  renderSlide();
+}
+$('prevBtn').addEventListener('click', ()=>goTo(idx-1));
+$('nextBtn').addEventListener('click', ()=>goTo(idx+1));
+$('swipeLeft').addEventListener('click', ()=>goTo(idx-1));
+$('swipeRight').addEventListener('click', ()=>goTo(idx+1));
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight') goTo(idx+1);
+  if(e.key==='ArrowLeft') goTo(idx-1);
+  if(e.key===' '){ e.preventDefault(); $('timerToggle').click(); }
+});
+
+let touchStartX = null;
+document.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', (e)=>{
+  if(touchStartX===null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(Math.abs(dx) > 60){ dx < 0 ? goTo(idx+1) : goTo(idx-1); }
+  touchStartX = null;
+});
+
+buildConstellation();
+renderSlide();
+</script>
 </body>
 </html>

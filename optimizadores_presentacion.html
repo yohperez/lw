@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Optimizadores: de SGD con Momentum a Adam</title>
+<title>Optimizadores: la receta que un cocinero aprende a ajustar</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,10 +19,10 @@
     --text:          #eef1f6;
     --text-dim:      #8b97ab;
     --text-faint:    #57637a;
-    --cold:          #22d3c9;   /* valle / bajo costo, extremo frío del viridis */
-    --warm:          #f5c542;   /* Adam / pico, extremo cálido del viridis */
-    --danger:        #ff6b6b;   /* SGD vainilla / gradiente que se pierde */
-    --violet:        #8c7bff;   /* momentum */
+    --cold:          #22d3c9;
+    --warm:          #f5c542;
+    --danger:        #ff6b6b;
+    --violet:        #8c7bff;
     --line:          rgba(255,255,255,0.09);
     --slide-w:       13.333in;
     --slide-h:       7.5in;
@@ -40,7 +40,6 @@
 
   .katex{ font-size:1em; }
 
-  /* ============ VIEWER (pantalla) ============ */
   #viewer{
     position:fixed; inset:0;
     display:flex; align-items:center; justify-content:center;
@@ -67,7 +66,6 @@
   }
   .slide.active{ display:flex; }
 
-  /* ============ Chrome comun de la diapositiva ============ */
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
     font-size:0.72em;
@@ -124,7 +122,6 @@
 
   .body-area{ flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; }
 
-  /* ============ Formulas / tarjetas ============ */
   .formula-card{
     background:var(--bg-elevated);
     border:1px solid var(--line);
@@ -181,7 +178,6 @@
     color:var(--text-dim);
   }
 
-  /* ============ Tarjetas de metodo (columnas) ============ */
   .method-card{
     background:var(--bg-elevated);
     border:1px solid var(--line);
@@ -210,7 +206,6 @@
   .method-card.mid{ border-top:3px solid var(--violet); }
   .method-card.hot{ border-top:3px solid var(--warm); }
 
-  /* ============ Tabla comparativa ============ */
   table.compare{
     width:100%;
     border-collapse:collapse;
@@ -243,7 +238,6 @@
   table.compare td.mid{ color:var(--violet); }
   table.compare td.best{ color:var(--warm); font-weight:600; }
 
-  /* ============ Motivo decorativo: curvas de nivel ============ */
   .contour-field{
     position:absolute; inset:0;
     opacity:0.55;
@@ -258,7 +252,6 @@
     opacity:0.9;
   }
 
-  /* ============ Slide de portada ============ */
   .slide.cover{ justify-content:center; align-items:flex-start; }
   .cover-kicker{
     font-family:'JetBrains Mono', monospace;
@@ -272,10 +265,10 @@
   .cover-title{
     font-family:'Space Grotesk', sans-serif;
     font-weight:700;
-    font-size:3.6em;
+    font-size:3.4em;
     line-height:1.03;
     letter-spacing:-0.015em;
-    max-width:11em;
+    max-width:12em;
     z-index:2;
     margin:0;
   }
@@ -302,11 +295,68 @@
   .cover-legend span{ display:flex; align-items:center; gap:0.5em; }
   .dot{ width:0.7em; height:0.7em; border-radius:50%; display:inline-block; }
 
-  /* ============ Slide de cierre ============ */
   .slide.closing{ align-items:center; justify-content:center; text-align:center; }
   .closing .cover-title{ max-width:14em; text-align:center; align-self:center; }
 
-  /* ============ Navegacion (solo pantalla) ============ */
+  .equiv-grid{
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    gap:0.7em;
+    width:100%;
+  }
+  .equiv-card{
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:1em 0.7em;
+    text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:0.5em;
+  }
+  .equiv-card .e-icon{ font-size:1.7em; line-height:1; }
+  .equiv-card .e-top{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:0.78em;
+    line-height:1.25;
+    color:var(--text);
+  }
+  .equiv-card .e-eq{ color:var(--text-faint); font-size:0.7em; font-family:'JetBrains Mono', monospace; }
+  .equiv-card .e-bottom{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.66em;
+    letter-spacing:0.02em;
+    color:var(--warm);
+    line-height:1.3;
+  }
+  .equiv-card.cold-top .e-bottom{ color:var(--cold); }
+  .equiv-card.violet-top .e-bottom{ color:var(--violet); }
+  .equiv-card.danger-top .e-bottom{ color:var(--danger); }
+
+  .stations-row{
+    display:flex; align-items:stretch; gap:0; width:100%;
+  }
+  .station{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:0.5em;
+    padding:0.9em 0.5em;
+    border-radius:10px;
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    text-align:center;
+    position:relative;
+  }
+  .station .s-icon{ font-size:1.5em; }
+  .station .s-label{ font-family:'JetBrains Mono', monospace; font-size:0.62em; color:var(--text-dim); letter-spacing:0.04em; }
+  .station .s-signal{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.68em;
+    font-weight:700;
+  }
+  .station-arrow{
+    display:flex; align-items:center; justify-content:center;
+    width:1.6em; color:var(--text-faint); font-size:1.1em; flex-shrink:0;
+  }
+
   .nav-ui{ position:fixed; inset:0; pointer-events:none; z-index:50; }
   .nav-zone{ position:absolute; top:0; bottom:0; width:12%; pointer-events:auto; cursor:pointer; }
   .nav-zone.left{ left:0; } .nav-zone.right{ right:0; }
@@ -356,7 +406,6 @@
   }
   .print-hint:hover{ color:var(--text); border-color:var(--cold); }
 
-  /* ============ IMPRESION -> PDF 16:9 ============ */
   @media print{
     @page{ size:13.333in 7.5in; margin:0; }
     html,body{ background:#000; height:auto; }
@@ -383,6 +432,8 @@
   @media screen and (max-width:700px){
     .two-col{ grid-template-columns:1fr; gap:1em; }
     .three-col{ grid-template-columns:1fr; gap:0.8em; }
+    .equiv-grid{ grid-template-columns:repeat(3,1fr); }
+    .stations-row{ flex-wrap:wrap; }
   }
 </style>
 </head>
@@ -393,9 +444,6 @@
 <div id="viewer">
   <div class="stage" id="stage">
 
-    <!-- ============================================================ -->
-    <!-- 1. PORTADA -->
-    <!-- ============================================================ -->
     <section class="slide cover active">
       <div class="contour-field" aria-hidden="true">
         <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice">
@@ -413,79 +461,118 @@
         </svg>
       </div>
       <div class="cover-kicker">Laboratorio de Machine Learning · Módulo III</div>
-      <h1 class="cover-title">Optimizadores:<br>de <span class="grad">SGD con Momentum</span><br>a <span class="grad">Adam</span></h1>
-      <p class="cover-sub">Por qué la red no aprendía, y cómo la regla de actualización de los pesos se convirtió en el ingrediente silencioso que hizo posible el deep learning moderno.</p>
+      <h1 class="cover-title">Optimizadores: la receta que un <span class="grad">cocinero</span> aprende a <span class="grad">ajustar</span></h1>
+      <p class="cover-sub">Probar, corregir la sazón, volver a probar. Así entrena una red neuronal — y así vamos a entender hoy por qué a veces el plato nunca mejora, y por qué un cocinero con más experiencia siempre le gana al que improvisa a ciegas.</p>
       <div class="cover-footer">
         <div class="cover-legend">
-          <span><i class="dot" style="background:#ff6b6b"></i>SGD</span>
-          <span><i class="dot" style="background:#8c7bff"></i>Momentum</span>
-          <span><i class="dot" style="background:#f5c542"></i>Adam</span>
+          <span><i class="dot" style="background:#ff6b6b"></i>SGD — el aprendiz</span>
+          <span><i class="dot" style="background:#8c7bff"></i>Momentum — la mano con memoria</span>
+          <span><i class="dot" style="background:#f5c542"></i>Adam — el chef maestro</span>
         </div>
         <div class="cover-legend"><span>Teoría — complemento del notebook interactivo</span></div>
       </div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 2. QUE ES UN OPTIMIZADOR -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">El problema</div>
-      <h1 class="headline">¿Qué es, en el fondo,<br>un <span class="accent-cold">optimizador</span>?</h1>
-      <div class="body-area two-col">
-        <div>
-          <p class="subhead">Una red neuronal aprende ajustando sus pesos <b style="color:var(--text)">θ</b> para minimizar una función de pérdida <b style="color:var(--text)">L(θ)</b>. El optimizador es, literalmente, la regla que decide:</p>
-          <ul class="check-list">
-            <li><b>Dirección</b> — hacia dónde mover cada peso.</li>
-            <li><b>Magnitud</b> — cuánto moverlo en ese paso.</li>
-            <li><b>Memoria</b> — si usa o no información de pasos anteriores.</li>
-          </ul>
-          <div class="formula-card">
-            <span class="formula-label">Regla general de actualización</span>
-            $$ \theta_{t+1} = \theta_t - \eta \cdot (\text{algo derivado del gradiente } g_t) $$
+      <div class="eyebrow">El mapa de la analogía</div>
+      <h1 class="headline">Equivalencias clave</h1>
+      <div class="body-area">
+        <p class="subhead">Toda la charla de hoy se apoya en una sola idea: <b style="color:var(--text)">entrenar una red neuronal se parece a ajustar una receta probándola una y otra vez</b>. Estos son los términos que vamos a usar como sinónimos durante toda la presentación.</p>
+        <div class="equiv-grid">
+          <div class="equiv-card">
+            <span class="e-icon">🍽️</span>
+            <span class="e-top">Plato final</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">RED ENTRENADA</span>
           </div>
-        </div>
-        <div>
-          <p class="subhead" style="margin-top:0;">Todo lo que distingue a SGD, Momentum y Adam es <b style="color:var(--warm)">qué va dentro de ese paréntesis</b>. La historia de los optimizadores es la historia de ir mejorando esa expresión, paso a paso, para que la red converja más rápido y de forma más estable.</p>
-          <span class="pill">η = learning rate · g = gradiente de la pérdida</span>
+          <div class="equiv-card">
+            <span class="e-icon">🥘</span>
+            <span class="e-top">Sazón que se corrige en cada prueba</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">PESOS (θ)</span>
+          </div>
+          <div class="equiv-card cold-top">
+            <span class="e-icon">👅</span>
+            <span class="e-top">Probar y notar qué le falta</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">GRADIENTE</span>
+          </div>
+          <div class="equiv-card">
+            <span class="e-icon">🥄</span>
+            <span class="e-top">Tamaño de la cucharada de ajuste</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">LEARNING RATE (η)</span>
+          </div>
+          <div class="equiv-card violet-top">
+            <span class="e-icon">🧠</span>
+            <span class="e-top">Recordar la tendencia de los últimos ajustes</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">MOMENTUM</span>
+          </div>
+          <div class="equiv-card danger-top">
+            <span class="e-icon">📉</span>
+            <span class="e-top">Distancia entre el plato y el sabor ideal</span>
+            <span class="e-eq">=</span>
+            <span class="e-bottom">PÉRDIDA (LOSS)</span>
+          </div>
         </div>
       </div>
       <div class="slide-number">02</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 3. SGD -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">Punto de partida</div>
-      <h1 class="headline">Descenso de gradiente<br><span class="accent-danger">(SGD)</span></h1>
+      <div class="eyebrow">El problema</div>
+      <h1 class="headline">El cocinero que decide<br><span class="accent-cold">cuánto y qué corregir</span></h1>
       <div class="body-area two-col">
         <div>
-          <div class="formula-card danger">
-            <span class="formula-label">Regla de actualización</span>
-            $$ \theta_{t+1} = \theta_t - \eta \, g_t $$
+          <p class="subhead">Imaginate una cocinera preparando la misma receta una y otra vez. Cada vez que la prueba, tiene que decidir tres cosas:</p>
+          <ul class="check-list">
+            <li><b>Qué corregir</b> — ¿le falta sal, le sobra ácido, le falta cocción?</li>
+            <li><b>Cuánto corregir</b> — ¿una pizca, o una cucharada entera?</li>
+            <li><b>Con memoria o sin memoria</b> — ¿decide solo por esta probada, o recuerda las últimas correcciones?</li>
+          </ul>
+          <div class="formula-card">
+            <span class="formula-label">La receta general de ajuste</span>
+            $$ \theta_{t+1} = \theta_t - \eta \cdot (\text{algo derivado de lo que notamos al probar}) $$
           </div>
-          <p class="subhead">En cada paso, SGD mira <b style="color:var(--text)">únicamente el gradiente actual</b> y da un paso proporcional a él, escalado por el learning rate <b style="color:var(--text)">η</b>. No tiene memoria de los pasos anteriores.</p>
         </div>
         <div>
-          <ul class="check-list">
-            <li>Simple, barato de calcular y fácil de entender.</li>
-            <li>Funciona bien en superficies de pérdida "bien portadas" (convexas, redondeadas).</li>
-            <li class="danger"><b>Es miope:</b> ignora hacia dónde veníamos moviéndonos.</li>
-            <li class="danger"><b>Un solo learning rate global</b> para los millones de parámetros de la red.</li>
-          </ul>
+          <p class="subhead" style="margin-top:0;">El <b style="color:var(--warm)">optimizador</b> es exactamente esa decisión, formalizada. Todo lo que distingue a SGD, Momentum y Adam es <b style="color:var(--warm)">qué va dentro de ese paréntesis</b> — es decir, qué tan sofisticado es el criterio del cocinero para decidir su próximo ajuste.</p>
+          <span class="pill">η = tamaño de la cucharada · gradiente = lo que notamos al probar</span>
         </div>
       </div>
       <div class="slide-number">03</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 4. EL LIMITE DE SGD -->
-    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Punto de partida</div>
+      <h1 class="headline">SGD: el cocinero<br><span class="accent-danger">que solo prueba una vez</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <div class="formula-card danger">
+            <span class="formula-label">Regla de ajuste</span>
+            $$ \theta_{t+1} = \theta_t - \eta \, g_t $$
+          </div>
+          <p class="subhead">En cada probada, este cocinero mira <b style="color:var(--text)">únicamente lo que nota en ese instante</b> y corrige en consecuencia, con una cucharada de tamaño fijo. No recuerda qué corrigió la vez anterior.</p>
+        </div>
+        <div>
+          <ul class="check-list">
+            <li>Simple y barato: prueba, corrige, listo.</li>
+            <li>Funciona bien cuando el plato es sencillo y el error es parejo.</li>
+            <li class="danger"><b>Es reactivo:</b> no tiene en cuenta hacia dónde venía corrigiendo.</li>
+            <li class="danger"><b>Una sola cuchara</b> para todos los ingredientes de la receta, sin importar cuán sensible sea cada uno.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">04</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
     <section class="slide">
       <div class="eyebrow">El límite de SGD</div>
-      <h1 class="headline">El dilema del <span class="accent-danger">learning rate</span><br>en un valle angosto</h1>
+      <h1 class="headline">El problema de <span class="accent-danger">una sola cuchara</span><br>para sal y para picante</h1>
       <div class="body-area two-col">
         <div>
           <div class="contour-field" style="position:relative; opacity:1; height:100%; min-height:220px;">
@@ -502,236 +589,233 @@
           </div>
         </div>
         <div>
-          <p class="subhead" style="margin-top:0;">Cuando la pérdida forma un valle angosto y curvo (algo muy común en redes reales), SGD enfrenta un dilema:</p>
+          <p class="subhead" style="margin-top:0;">Pensá en una receta con dos ingredientes muy distintos: <b style="color:var(--text)">la sal</b> (con la que hay que ser delicado, se nota con muy poquito) y <b style="color:var(--text)">el picante</b> (que tolera cucharadas grandes sin arruinar el plato).</p>
           <ul class="check-list">
-            <li><b>η alto</b> → el paso "rebota" de pared a pared del valle: <b style="color:var(--danger)">zigzagueo</b>, oscilación e incluso divergencia.</li>
-            <li><b>η bajo</b> → el paso avanza tan poco que la red aprende <b style="color:var(--danger)">demasiado lento</b>.</li>
+            <li><b>Cuchara grande</b> → se pasa de sal en cada corrección: <b style="color:var(--danger)">oscila</b> entre "muy salado" y "muy soso" sin encontrar el punto.</li>
+            <li><b>Cuchara chica</b> → tarda una eternidad en notar diferencia en el picante.</li>
           </ul>
-          <p class="subhead">No existe un único η que funcione bien en todas las direcciones del espacio de pesos al mismo tiempo.</p>
-        </div>
-      </div>
-      <div class="slide-number">04</div>
-      <div class="deck-mark">OPTIMIZADORES</div>
-    </section>
-
-    <!-- ============================================================ -->
-    <!-- 5. MOMENTUM -->
-    <!-- ============================================================ -->
-    <section class="slide">
-      <div class="eyebrow">Primera evolución</div>
-      <h1 class="headline">SGD + <span style="color:var(--violet)">Momentum</span></h1>
-      <div class="body-area two-col">
-        <div>
-          <div class="formula-card violet">
-            <span class="formula-label">Regla de actualización</span>
-            $$ v_t = \beta \, v_{t-1} + (1-\beta)\, g_t $$
-            $$ \theta_{t+1} = \theta_t - \eta \, v_t $$
-          </div>
-          <p class="subhead">Idea: en vez de usar el gradiente crudo, acumulamos un <b style="color:var(--text)">promedio móvil</b> <b>v</b> de los gradientes recientes — una especie de "velocidad" o inercia.</p>
-        </div>
-        <div>
-          <p class="subhead" style="margin-top:0;"><b style="color:var(--violet)">Analogía física:</b> una bola pesada rodando por el valle. Su inercia hace que:</p>
-          <ul class="check-list">
-            <li>Las oscilaciones perpendiculares al valle <b>se cancelen</b> (van en direcciones opuestas y se promedian).</li>
-            <li>El avance <b>a lo largo</b> del valle se <b style="color:var(--warm)">refuerce</b> (es consistente entre pasos, se va acumulando).</li>
-          </ul>
-          <p class="subhead">Resultado: converge más rápido y con menos zigzagueo que SGD puro, usando el <b>mismo</b> gradiente crudo.</p>
+          <p class="subhead">Un mismo tamaño de cuchara no puede ser el correcto para los dos ingredientes al mismo tiempo.</p>
         </div>
       </div>
       <div class="slide-number">05</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 6. TODAVIA NO ALCANZA -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">Todavía no alcanza</div>
-      <h1 class="headline">Un learning rate global<br>sigue sin ser suficiente</h1>
+      <div class="eyebrow">Primera evolución</div>
+      <h1 class="headline">Momentum: la mano<br>que <span style="color:var(--violet)">recuerda la tendencia</span></h1>
       <div class="body-area two-col">
         <div>
-          <p class="subhead">Momentum mejora la <b style="color:var(--text)">dirección</b> del paso, pero sigue escalando todos los parámetros con el <b>mismo η</b>. En una red real, distintos parámetros necesitan pasos de tamaño muy distinto:</p>
-          <ul class="check-list">
-            <li>Parámetros con gradientes <b>grandes y frecuentes</b> deberían moverse con pasos <b>chicos</b> (para no divergir).</li>
-            <li>Parámetros con gradientes <b>pequeños y raros</b> deberían moverse con pasos <b>grandes</b> (para no estancarse).</li>
-          </ul>
+          <div class="formula-card violet">
+            <span class="formula-label">Regla de ajuste</span>
+            $$ v_t = \beta \, v_{t-1} + (1-\beta)\, g_t $$
+            $$ \theta_{t+1} = \theta_t - \eta \, v_t $$
+          </div>
+          <p class="subhead">Idea: en vez de corregir solo por lo que notamos en <b style="color:var(--text)">esta</b> probada, promediamos con la <b style="color:var(--text)">tendencia</b> de las últimas correcciones.</p>
         </div>
         <div>
-          <div class="formula-card">
-            <span class="formula-label">La pregunta que faltaba responder</span>
-            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">¿Podemos hacer que <b style="color:var(--text)">cada parámetro tenga, en la práctica, su propio learning rate</b> — ajustado automáticamente según su propia historia de gradientes?</p>
-          </div>
-          <p class="subhead">Esa pregunta es exactamente lo que responden AdaGrad, RMSProp y, finalmente, Adam.</p>
+          <p class="subhead" style="margin-top:0;"><b style="color:var(--violet)">Como una cocinera con experiencia:</b> si en las últimas tres probadas venía agregando sal de a poquito, su mano ya "sabe" seguir en esa dirección — no reacciona de forma exagerada a un solo bocado raro.</p>
+          <ul class="check-list">
+            <li>Las correcciones que se contradicen entre sí (mucha sal, después mucho ácido, después mucha sal de nuevo) <b>se cancelan</b> en el promedio.</li>
+            <li>Las correcciones consistentes (siempre un poquito más de picante) <b style="color:var(--warm)">se refuerzan</b>.</li>
+          </ul>
+          <p class="subhead">Resultado: corrige más parejo y llega antes al punto justo, con la misma cuchara que SGD.</p>
         </div>
       </div>
       <div class="slide-number">06</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 7. EL PUENTE: ADAGRAD / RMSPROP -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">El puente</div>
-      <h1 class="headline">De AdaGrad a RMSProp:<br>aprendiendo a <span class="accent-cold">adaptar el paso</span></h1>
-      <div class="body-area three-col">
-        <div class="method-card cold">
-          <div class="m-tag">2011</div>
-          <div class="m-title">AdaGrad</div>
-          <div class="m-formula">$$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\textstyle\sum g_t^2}+\epsilon}\, g_t $$</div>
-          <p class="m-desc">Divide el paso por la raíz de la <b>suma acumulada</b> de gradientes al cuadrado. Los parámetros con gradientes históricamente grandes reciben pasos más chicos, y viceversa.</p>
+      <div class="eyebrow">Todavía no alcanza</div>
+      <h1 class="headline">Una sola cuchara<br>sigue sin ser suficiente</h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">Momentum mejora <b style="color:var(--text)">hacia dónde</b> corregimos, pero seguimos usando <b>la misma cuchara</b> para todos los ingredientes. En una receta real, cada ingrediente necesita su propio tamaño de ajuste:</p>
+          <ul class="check-list">
+            <li>Ingredientes <b>fuertes y sensibles</b> (como la sal) necesitan cucharadas <b>chicas</b> — para no arruinar el plato.</li>
+            <li>Ingredientes <b>suaves o tolerantes</b> (como el picante) necesitan cucharadas <b>grandes</b> — para que la corrección se note.</li>
+          </ul>
         </div>
-        <div class="method-card mid">
-          <div class="m-tag">Limitación</div>
-          <div class="m-title">El problema de AdaGrad</div>
-          <div class="m-formula" style="opacity:0.6;">$$ \sum g_t^2 \;\longrightarrow\; \infty $$</div>
-          <p class="m-desc">Como la suma solo <b>crece</b>, el denominador se vuelve enorme con el tiempo y el paso efectivo tiende a <b style="color:var(--danger)">cero</b> — el entrenamiento se frena antes de converger.</p>
-        </div>
-        <div class="method-card hot">
-          <div class="m-tag">2012</div>
-          <div class="m-title">RMSProp</div>
-          <div class="m-formula">$$ v_t = \beta v_{t-1} + (1-\beta) g_t^2 $$</div>
-          <p class="m-desc">Reemplaza la suma acumulada por un <b>promedio móvil</b> de los gradientes al cuadrado. El denominador ya no explota — se adapta a la magnitud <b style="color:var(--warm)">reciente</b> del gradiente.</p>
+        <div>
+          <div class="formula-card">
+            <span class="formula-label">La pregunta que faltaba responder</span>
+            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">¿Podemos hacer que <b style="color:var(--text)">cada ingrediente tenga su propia cuchara</b> — calibrada automáticamente según cuánto se lo ha tenido que corregir en el pasado?</p>
+          </div>
+          <p class="subhead">Esa pregunta es exactamente lo que responden AdaGrad, RMSProp y, finalmente, Adam.</p>
         </div>
       </div>
       <div class="slide-number">07</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 8. ADAM -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">La síntesis · 2014</div>
-      <h1 class="headline"><span class="accent">Adam</span> = Momentum + RMSProp</h1>
-      <div class="body-area two-col">
-        <div>
-          <div class="formula-card violet">
-            <span class="formula-label">1 — Primer momento (dirección, como Momentum)</span>
-            $$ m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t $$
-          </div>
-          <div class="formula-card warm">
-            <span class="formula-label">2 — Segundo momento (escala, como RMSProp)</span>
-            $$ v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2 $$
-          </div>
+      <div class="eyebrow">El puente</div>
+      <h1 class="headline">La libreta de anotaciones<br>de <span class="accent-cold">cada ingrediente</span></h1>
+      <div class="body-area three-col">
+        <div class="method-card cold">
+          <div class="m-tag">2011</div>
+          <div class="m-title">AdaGrad</div>
+          <div class="m-formula">$$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\textstyle\sum g_t^2}+\epsilon}\, g_t $$</div>
+          <p class="m-desc">La cocinera anota en una libreta <b>cada corrección histórica</b> de cada ingrediente. Si a la sal la corrigió mucho en el pasado, ahora usa una cuchara más chica para ella — y viceversa.</p>
         </div>
-        <div>
-          <div class="formula-card">
-            <span class="formula-label">3 — Corrección de sesgo (m y v arrancan en 0)</span>
-            $$ \hat m_t = \dfrac{m_t}{1-\beta_1^t} \qquad \hat v_t = \dfrac{v_t}{1-\beta_2^t} $$
-          </div>
-          <div class="formula-card" style="border-left-color:var(--text)">
-            <span class="formula-label">4 — Actualización final, por parámetro</span>
-            $$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\hat v_t} + \epsilon}\, \hat m_t $$
-          </div>
+        <div class="method-card mid">
+          <div class="m-tag">Limitación</div>
+          <div class="m-title">La libreta que nunca se borra</div>
+          <div class="m-formula" style="opacity:0.6;">$$ \sum g_t^2 \;\longrightarrow\; \infty $$</div>
+          <p class="m-desc">Como la libreta <b>solo acumula</b> y nunca olvida, después de muchas probadas la cuchara se vuelve <b style="color:var(--danger)">microscópica para todo</b> — la cocinera deja de corregir, aunque el plato todavía lo necesite.</p>
+        </div>
+        <div class="method-card hot">
+          <div class="m-tag">2012</div>
+          <div class="m-title">RMSProp</div>
+          <div class="m-formula">$$ v_t = \beta v_{t-1} + (1-\beta) g_t^2 $$</div>
+          <p class="m-desc">Cambia la libreta por una <b>memoria reciente</b>: solo pesa las últimas correcciones de cada ingrediente. La cuchara se recalibra sola, sin quedarse nunca sin margen de ajuste.</p>
         </div>
       </div>
       <div class="slide-number">08</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 9. POR QUE GANO -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">Por qué ganó</div>
-      <h1 class="headline">Por qué Adam se volvió<br>el <span class="accent">estándar de la industria</span></h1>
+      <div class="eyebrow">La síntesis · 2014</div>
+      <h1 class="headline"><span class="accent">Adam</span>: el chef maestro</h1>
       <div class="body-area two-col">
         <div>
-          <ul class="check-list">
-            <li><b>Adapta el paso por parámetro</b> — cada peso tiene, en la práctica, su propio learning rate efectivo.</li>
-            <li><b>Hereda la inercia de Momentum</b> — atraviesa valles angostos sin zigzaguear.</li>
-            <li><b>No explota como AdaGrad</b> — usa promedios móviles, no sumas acumuladas.</li>
-            <li><b>Robusto a la elección de η</b> — converge razonablemente bien incluso sin un ajuste fino de hiperparámetros.</li>
-          </ul>
+          <div class="formula-card violet">
+            <span class="formula-label">1 — Recuerda la tendencia (como Momentum)</span>
+            $$ m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t $$
+          </div>
+          <div class="formula-card warm">
+            <span class="formula-label">2 — Calibra la cuchara de cada ingrediente (como RMSProp)</span>
+            $$ v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2 $$
+          </div>
         </div>
         <div>
-          <div class="formula-card" style="border-left-color:var(--warm)">
-            <span class="formula-label">En una frase</span>
-            <p style="margin:0; font-size:1em;">Adam le da a cada parámetro <b style="color:var(--warm)">su propia "prudencia"</b>: avanza rápido donde el terreno lo permite, y con cautela donde el gradiente ha sido errático.</p>
+          <div class="formula-card">
+            <span class="formula-label">3 — Corrección de arranque (las primeras probadas cuentan poco)</span>
+            $$ \hat m_t = \dfrac{m_t}{1-\beta_1^t} \qquad \hat v_t = \dfrac{v_t}{1-\beta_2^t} $$
           </div>
-          <p class="subhead">Por eso es el valor <b>por defecto</b> en la enorme mayoría de papers, frameworks (PyTorch, TensorFlow/Keras) y proyectos de deep learning modernos.</p>
+          <div class="formula-card" style="border-left-color:var(--text)">
+            <span class="formula-label">4 — El ajuste final, ingrediente por ingrediente</span>
+            $$ \theta_{t+1} = \theta_t - \dfrac{\eta}{\sqrt{\hat v_t} + \epsilon}\, \hat m_t $$
+          </div>
         </div>
       </div>
       <div class="slide-number">09</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 10. VANISHING GRADIENT -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">El otro problema</div>
-      <h1 class="headline">Por qué una red profunda<br><span class="accent-danger">deja de aprender</span></h1>
+      <div class="eyebrow">Por qué ganó</div>
+      <h1 class="headline">Por qué Adam se volvió<br>el <span class="accent">chef de guardia de la industria</span></h1>
       <div class="body-area two-col">
         <div>
-          <p class="subhead">Backpropagation calcula el gradiente de una capa temprana <b style="color:var(--text)">multiplicando</b> las derivadas de todas las capas que vienen después (regla de la cadena):</p>
-          <div class="formula-card danger">
-            <span class="formula-label">Gradiente de una capa temprana (L capas)</span>
-            $$ \frac{\partial \mathcal{L}}{\partial \theta_1} \;\propto\; \prod_{l=1}^{L} \sigma'(z_l) $$
-          </div>
+          <ul class="check-list">
+            <li><b>Cuchara propia por ingrediente</b> — cada uno se corrige a su propia medida.</li>
+            <li><b>Hereda la memoria de tendencia de Momentum</b> — no corrige a los tumbos.</li>
+            <li><b>No se queda sin margen</b> como la libreta de AdaGrad.</li>
+            <li><b>No hay que adivinar de antemano</b> el tamaño exacto de cuchara para cada ingrediente.</li>
+          </ul>
         </div>
         <div>
-          <p class="subhead" style="margin-top:0;">La derivada de la sigmoide, <b>σ'(z) = σ(z)(1−σ(z))</b>, tiene un <b style="color:var(--warm)">máximo de solo 0.25</b> y cae cerca de 0 cuando la neurona está saturada.</p>
-          <ul class="check-list">
-            <li class="danger">Multiplicar 4 o 5 números ≤ 0.25 da un producto <b>diminuto</b>.</li>
-            <li class="danger">Las <b>primeras capas</b> reciben una señal de gradiente casi nula.</li>
-            <li class="danger">Quedan casi <b>congeladas</b> en su inicialización aleatoria — la red no aprende representaciones útiles ahí.</li>
-          </ul>
+          <div class="formula-card" style="border-left-color:var(--warm)">
+            <span class="formula-label">En una frase</span>
+            <p style="margin:0; font-size:1em;">Adam le da a cada ingrediente <b style="color:var(--warm)">su propia prudencia</b>: corrige fuerte donde el plato lo tolera, y con delicadeza donde un exceso arruinaría todo.</p>
+          </div>
+          <p class="subhead">Por eso es la cuchara <b>por defecto</b> en la enorme mayoría de las cocinas — perdón, de los papers, frameworks y proyectos de deep learning modernos.</p>
         </div>
       </div>
       <div class="slide-number">10</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 11. ADAM MITIGA -->
-    <!-- ============================================================ -->
     <section class="slide">
-      <div class="eyebrow">La solución parcial</div>
-      <h1 class="headline">Cómo Adam <span class="accent">mitiga</span><br>(pero no resuelve) el problema</h1>
-      <div class="body-area two-col">
-        <div>
-          <p class="subhead">El paso de Adam se normaliza dividiendo por <b style="color:var(--text)">√v̂ₜ</b>, la magnitud típica reciente del gradiente <b>de ese parámetro</b>:</p>
-          <div class="formula-card warm">
-            $$ \Delta\theta \;=\; \dfrac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} $$
-          </div>
-          <p class="subhead">Si un parámetro tiene gradientes consistentemente chicos, <b>v̂ₜ también es chico</b> — y el cociente se reescala hacia un paso razonable, en vez de colapsar a cero como en SGD.</p>
+      <div class="eyebrow">El otro problema</div>
+      <h1 class="headline">La cocina de muchas estaciones:<br>el mensaje que <span class="accent-danger">se diluye</span></h1>
+      <div class="body-area">
+        <p class="subhead">Imaginate una cocina con <b style="color:var(--text)">varias estaciones en cadena</b>: el caldo base, la reducción, la salsa, el montaje, el emplatado final. El comensal prueba el plato terminado y dice: <b>"le falta sal"</b>. Ese mensaje tiene que viajar, estación por estación, de vuelta hasta el caldo base.</p>
+        <div class="stations-row">
+          <div class="station"><span class="s-icon">🍲</span><span class="s-label">CALDO BASE<br>(capa 1)</span><span class="s-signal" style="color:var(--danger)">"¿sal?"</span></div>
+          <div class="station-arrow">←</div>
+          <div class="station"><span class="s-icon">🔥</span><span class="s-label">REDUCCIÓN</span><span class="s-signal" style="color:#ff9b6b">un poco...</span></div>
+          <div class="station-arrow">←</div>
+          <div class="station"><span class="s-icon">🥣</span><span class="s-label">SALSA</span><span class="s-signal" style="color:var(--warm)">tal vez</span></div>
+          <div class="station-arrow">←</div>
+          <div class="station"><span class="s-icon">🍛</span><span class="s-label">MONTAJE</span><span class="s-signal" style="color:#cfe08a">algo</span></div>
+          <div class="station-arrow">←</div>
+          <div class="station"><span class="s-icon">🍽️</span><span class="s-label">EMPLATADO<br>(última capa)</span><span class="s-signal" style="color:var(--cold)">"LE FALTA SAL"</span></div>
         </div>
-        <div>
-          <div class="formula-card" style="border-left-color:var(--danger)">
-            <span class="formula-label">Importante</span>
-            <p style="margin:0; font-size:0.95em;">Adam <b style="color:var(--danger)">no cambia la causa raíz</b>: la saturación de la sigmoide sigue produciendo gradientes crudos diminutos.</p>
-          </div>
-          <p class="subhead">Por eso, en la práctica moderna, el vanishing gradient se ataca con una <b>combinación</b> de soluciones:</p>
-          <ul class="check-list">
-            <li><b>ReLU</b> y variantes (derivada no se satura para z&gt;0).</li>
-            <li><b>Inicialización</b> He / Xavier.</li>
-            <li><b>Batch / Layer Normalization.</b></li>
-            <li><b>Conexiones residuales</b> (ResNets).</li>
-            <li>… y un optimizador adaptativo como <b style="color:var(--warm)">Adam</b>.</li>
-          </ul>
-        </div>
+        <p class="subhead" style="margin-top:0.9em;">En cada estación, el mensaje se repite pero <b style="color:var(--danger)">pierde intensidad</b> — como el juego del teléfono descompuesto. Para cuando llega al caldo base, el cocinero de esa estación casi no recibe corrección alguna, y sigue preparando el caldo exactamente igual, receta tras receta.</p>
       </div>
       <div class="slide-number">11</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 12. TABLA COMPARATIVA -->
-    <!-- ============================================================ -->
+    <section class="slide">
+      <div class="eyebrow">Por qué pasa esto</div>
+      <h1 class="headline">Por qué el mensaje<br>se <span class="accent-danger">diluye tanto</span></h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">Backpropagation es, literalmente, ese mensaje viajando de estación en estación hacia atrás, <b style="color:var(--text)">multiplicándose</b> por cuánto "deja pasar" cada estación:</p>
+          <div class="formula-card danger">
+            <span class="formula-label">Corrección que llega a una estación temprana (L estaciones)</span>
+            $$ \frac{\partial \mathcal{L}}{\partial \theta_1} \;\propto\; \prod_{l=1}^{L} \sigma'(z_l) $$
+          </div>
+        </div>
+        <div>
+          <p class="subhead" style="margin-top:0;">Cada estación usa una activación <b style="color:var(--text)">sigmoide</b>, cuya derivada tiene un <b style="color:var(--warm)">techo de apenas 0.25</b> — deja pasar como máximo una cuarta parte del mensaje.</p>
+          <ul class="check-list">
+            <li class="danger">Multiplicar 4 o 5 "techos" de 0.25 diluye un mensaje <b>casi inaudible</b>.</li>
+            <li class="danger">El caldo base (primera capa) casi no recibe corrección.</li>
+            <li class="danger">Ese cocinero queda <b>congelado</b> en su receta inicial — nunca aprende a mejorar su parte.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">12</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
+    <section class="slide">
+      <div class="eyebrow">La solución parcial</div>
+      <h1 class="headline">Cómo Adam <span class="accent">ayuda</span><br>(pero no arregla la cadena de estaciones)</h1>
+      <div class="body-area two-col">
+        <div>
+          <p class="subhead">El ajuste de Adam se recalibra dividiendo por <b style="color:var(--text)">√v̂ₜ</b> — la magnitud típica reciente de la corrección <b>de ese ingrediente puntual</b>:</p>
+          <div class="formula-card warm">
+            $$ \Delta\theta \;=\; \dfrac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} $$
+          </div>
+          <p class="subhead">Si el caldo base viene recibiendo correcciones consistentemente chicas, Adam <b>agranda su cuchara</b> para compensar — en vez de dejar que la corrección colapse a casi nada, como le pasaría a SGD.</p>
+        </div>
+        <div>
+          <div class="formula-card" style="border-left-color:var(--danger)">
+            <span class="formula-label">Importante</span>
+            <p style="margin:0; font-size:0.95em;">Adam <b style="color:var(--danger)">no achica la cadena de estaciones</b>: el mensaje real que llega al caldo base sigue siendo débil, Adam solo lo aprovecha mejor.</p>
+          </div>
+          <p class="subhead">Por eso, en la práctica moderna, se combina Adam con arreglos a la cocina misma:</p>
+          <ul class="check-list">
+            <li><b>ReLU</b> en vez de sigmoide (deja pasar el mensaje sin techo de 0.25).</li>
+            <li><b>Buena "puesta a punto" inicial</b> de cada estación (inicialización He / Xavier).</li>
+            <li><b>Estandarizar</b> las porciones en cada estación (Batch / Layer Normalization).</li>
+            <li><b>Atajos directos</b> entre estaciones lejanas (conexiones residuales).</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-number">13</div>
+      <div class="deck-mark">OPTIMIZADORES</div>
+    </section>
+
     <section class="slide">
       <div class="eyebrow">Resumen</div>
-      <h1 class="headline">Tres optimizadores,<br>tres formas de dar el paso</h1>
+      <h1 class="headline">Tres cocineros,<br>tres formas de corregir la receta</h1>
       <div class="body-area">
         <table class="compare">
           <thead>
             <tr>
-              <th>Optimizador</th>
-              <th>Usa memoria (dirección)</th>
-              <th>Adapta por parámetro (escala)</th>
-              <th>Sensibilidad a η</th>
-              <th>Vanishing gradient</th>
+              <th>Cocinero</th>
+              <th>Recuerda la tendencia</th>
+              <th>Cuchara propia por ingrediente</th>
+              <th>Riesgo de arruinar el plato</th>
+              <th>Frente al mensaje diluido</th>
             </tr>
           </thead>
           <tbody>
@@ -739,58 +823,52 @@
               <td>SGD</td>
               <td class="mid">No</td>
               <td class="mid">No</td>
-              <td class="mid" style="color:var(--danger)">Alta</td>
+              <td class="mid" style="color:var(--danger)">Alto</td>
               <td style="color:var(--danger)">Sin mitigación</td>
             </tr>
             <tr>
               <td>Momentum</td>
               <td class="good">Sí</td>
               <td class="mid">No</td>
-              <td class="mid">Media</td>
+              <td class="mid">Medio</td>
               <td>Mitigación leve</td>
             </tr>
             <tr>
               <td>Adam</td>
               <td class="good">Sí</td>
               <td class="best">Sí</td>
-              <td class="best">Baja</td>
+              <td class="best">Bajo</td>
               <td class="good">Mitigación notable</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="slide-number">12</div>
+      <div class="slide-number">14</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 13. CONEXION CON EL LABORATORIO -->
-    <!-- ============================================================ -->
     <section class="slide">
       <div class="eyebrow">En la práctica</div>
-      <h1 class="headline">Esto es lo que vimos<br>en el notebook interactivo</h1>
+      <h1 class="headline">De la cocina al laboratorio:<br>esto lo probamos con datos reales</h1>
       <div class="body-area two-col">
         <div>
           <ul class="check-list">
-            <li>Trayectorias de SGD / Momentum / Adam sobre un valle angosto (función tipo Rosenbrock).</li>
+            <li>Trayectorias de SGD / Momentum / Adam sobre un valle angosto — la versión matemática de "la sal y el picante".</li>
             <li>Una red neuronal <b>desde cero, con NumPy</b>, entrenada sobre el dataset público <i>Iris</i> (flores — versicolor vs. virginica).</li>
-            <li>La norma del gradiente <b>por capa</b>, capturada en vivo durante el entrenamiento.</li>
+            <li>La norma del gradiente <b>por capa</b>, capturada en vivo — la versión medible de "cuánto le llega el mensaje a cada estación".</li>
           </ul>
         </div>
         <div>
           <div class="formula-card">
             <span class="formula-label">Lo que se comprobó empíricamente</span>
-            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">Con <b style="color:var(--danger)">SGD</b> puro, el gradiente de la primera capa quedó <b>órdenes de magnitud</b> por debajo del de la última capa. Con <b style="color:var(--warm)">Adam</b>, esa brecha se redujo y la red convergió más rápido y de forma más estable.</p>
+            <p style="margin:0; font-size:0.95em; color:var(--text-dim);">Con <b style="color:var(--danger)">SGD</b> puro, la primera capa (el "caldo base") quedó recibiendo un mensaje <b>órdenes de magnitud</b> más débil que la última. Con <b style="color:var(--warm)">Adam</b>, esa brecha se achicó y la red aprendió más rápido y de forma más estable.</p>
           </div>
         </div>
       </div>
-      <div class="slide-number">13</div>
+      <div class="slide-number">15</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
-    <!-- ============================================================ -->
-    <!-- 14. CIERRE -->
-    <!-- ============================================================ -->
     <section class="slide closing">
       <div class="contour-field" aria-hidden="true">
         <svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice">
@@ -803,9 +881,9 @@
         </svg>
       </div>
       <div class="cover-kicker" style="align-self:center;">Gracias</div>
-      <h1 class="cover-title">De un gradiente que <span class="grad">desaparece</span><br>a un optimizador que <span class="grad">se adapta</span></h1>
-      <p class="cover-sub" style="align-self:center; text-align:center; margin-top:1em;">Preguntas, dudas o el notebook interactivo — todo queda abierto a discusión.</p>
-      <div class="slide-number">14</div>
+      <h1 class="cover-title">De un mensaje que se <span class="grad">diluye</span><br>a un cocinero que <span class="grad">calibra cada cuchara</span></h1>
+      <p class="cover-sub" style="align-self:center; text-align:center; margin-top:1em;">Preguntas, dudas, o ganas de probar la receta ustedes mismos en el notebook interactivo — todo queda abierto a discusión.</p>
+      <div class="slide-number">16</div>
       <div class="deck-mark">OPTIMIZADORES</div>
     </section>
 
@@ -821,7 +899,7 @@
 
 <div class="nav-bar">
   <button class="nav-btn" onclick="goTo(current-1)" aria-label="Anterior">‹</button>
-  <span class="nav-counter" id="counter">1 / 14</span>
+  <span class="nav-counter" id="counter">1 / 16</span>
   <button class="nav-btn" onclick="goTo(current+1)" aria-label="Siguiente">›</button>
 </div>
 
@@ -856,6 +934,7 @@
   });
 
   document.getElementById('progressFill').style.width = ((current+1)/total*100) + '%';
+  document.getElementById('counter').textContent = '1 / ' + total;
 
   window.addEventListener('DOMContentLoaded', () => {
     renderMathInElement(document.body, {
