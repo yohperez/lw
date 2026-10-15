@@ -128,6 +128,63 @@
     .hero h1{font-size:26px;}
     .compare, .compare.thirds{grid-template-columns:1fr;}
   }
+
+  /* ---- Infografías ---- */
+  .concept .body{display:flex;gap:22px;align-items:flex-start;}
+  .concept .body .txt{flex:1;min-width:0;}
+  .concept .body.stack{flex-direction:column;}
+  .concept .body.stack .txt{width:100%;}
+  .figs{display:flex;flex-direction:column;gap:12px;width:210px;flex-shrink:0;}
+  .figs.row{flex-direction:row;flex-wrap:wrap;width:100%;}
+  .figs.row a.fig{width:210px;}
+  a.fig{display:block;text-decoration:none;background:var(--card-2);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:zoom-in;}
+  a.fig img{display:block;width:100%;height:auto;background:#fff;}
+  a.fig span{display:block;font-size:12px;color:var(--text-dim);padding:7px 10px;border-top:1px solid var(--border);}
+  a.fig:hover,a.fig:focus-visible{border-color:var(--accent);}
+  a.fig:hover span,a.fig:focus-visible span{color:var(--text);}
+  a.fig:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .scroll{overflow-x:auto;margin:14px 0;}
+  .scroll table.cmp{margin:0;min-width:480px;}
+  ul.pts{margin:8px 0 12px;padding-left:20px;}
+  ul.pts li{font-size:14px;line-height:1.6;margin-bottom:4px;color:var(--text);}
+  .compare .col ul.pts{margin:0 0 8px;padding-left:18px;}
+  .compare .col ul.pts li{font-size:13.5px;color:var(--text-dim);}
+  .compare .col p+p{margin-top:8px;}
+  .compare{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .compare.thirds{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .compare .col{min-width:0;}
+  .compare .col pre.code{margin:0;}
+  .compare .col p.dim{color:var(--text-dim);}
+  pre.code{background:#080c18;border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.55;color:#cfe0ff;margin:12px 0;}
+  pre.code code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;}
+  .concept p code,.concept li code,.concept td code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--card-2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text);}
+  .idea{border-left:3px solid var(--accent);background:var(--card-2);padding:11px 16px;border-radius:0 8px 8px 0;font-size:14px;line-height:1.6;margin:14px 0 6px;}
+  details.more{margin:18px 0 6px;border:1px solid var(--border);border-radius:10px;background:var(--card-2);}
+  details.more > summary{cursor:pointer;padding:11px 16px;font-size:13.5px;font-weight:600;color:var(--accent);list-style:none;}
+  details.more > summary::-webkit-details-marker{display:none;}
+  details.more > summary::before{content:"+ ";font-weight:700;}
+  details.more[open] > summary::before{content:"− ";}
+  details.more > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px;}
+  details.more .more-body{padding:4px 16px 14px;border-top:1px solid var(--border);}
+  .refuerzo{margin-top:20px;padding-top:16px;border-top:1px dashed var(--border);}
+  .refuerzo > h4{margin:0 0 12px;font-size:13.5px;color:var(--accent);font-weight:700;}
+  .lb{position:fixed;inset:0;z-index:100;background:rgba(5,8,16,.93);overflow:auto;display:flex;flex-direction:column;align-items:center;padding:64px 16px 32px;}
+  .lb[hidden]{display:none;}
+  .lb img{display:block;width:min(940px,100%);height:auto;border-radius:10px;background:#fff;}
+  .lb .bar{position:fixed;top:0;left:0;right:0;z-index:101;display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,14,26,.96);border-bottom:1px solid var(--border);}
+  .lb .bar .cap{flex:1;min-width:0;font-size:13px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lb .bar button,.lb .bar a{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;text-decoration:none;font-family:inherit;}
+  .lb .bar button:hover,.lb .bar a:hover,.lb .bar button:focus-visible,.lb .bar a:focus-visible{border-color:var(--accent);outline:none;}
+  @media (max-width:900px){
+    .compare,.compare.thirds{grid-template-columns:minmax(0,1fr);}
+    .concept .body{flex-direction:column;align-items:stretch;}
+    .concept .body .txt{width:100%;max-width:100%;}
+    .figs{flex-direction:row;width:100%;}
+    .figs a.fig{width:210px;max-width:60%;}
+  }
+  @media (max-width:520px){
+    .lb .bar .open{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -290,6 +347,13 @@
       <span class="tag">Sigmoid → salida binaria</span>
       <span class="tag">Softmax → salida multiclase</span>
     </div>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>Una neurona:</strong> entrada <em>x</em> con forma [B, D] → producto matricial <code>x·W + b</code> → activación <code>f(z)</code> → salida [B, D_out]. Los datos se ponderan, se suma el sesgo y se aplica una función no lineal.</li><li><strong>ReLU</strong> = <code>max(0, x)</code>: elimina valores negativos. <strong>Sigmoid:</strong> salida entre 0 y 1, útil para probabilidad binaria. <strong>Softmax:</strong> convierte logits en probabilidades que suman 1 (clasificación multiclase).</li><li><strong>Forward propagation en un MLP:</strong> tensor de entrada [B, D_in] → Linear (W1, b1) → ReLU → Linear (W2, b2) → Softmax (si se necesitan probabilidades) → predicción. B es el tamaño del lote y D el número de características.</li><li>El mismo flujo en PyTorch y TensorFlow/Keras: <code>logits = model(x)</code>.</li></ul><div class="idea">El forward pass es una secuencia de transformaciones de tensores; las capas aprenden los pesos durante el entrenamiento.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/28_perceptron_arquitectura_mlp.webp" data-cap="Infografía 28: Perceptrón y arquitectura MLP" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/28_perceptron_arquitectura_mlp.webp" alt="Perceptrón y arquitectura MLP" width="941" height="1672"><span>Ampliar infografía 28</span></a></div>
+      </div>
+    </div>
   </div>
 
   <div class="concept" id="funciones-perdida-backprop">
@@ -297,6 +361,13 @@
     <div class="katex-block">MSE: \(\;\dfrac{1}{n}\sum (y_i - \hat{y}_i)^2\)</div>
     <div class="katex-block">Cross-Entropy: \(\;-\sum y_i \log(\hat{y}_i)\)</div>
     <p>La función de pérdida mide qué tan lejos están las predicciones de la realidad. Backpropagation es el método para calcular, capa por capa hacia atrás (de la salida hacia la entrada), cuánto contribuyó cada peso de la red a ese error — usando la regla de la cadena del cálculo diferencial — para luego poder ajustarlos con gradient descent.</p>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>MSE (regresión):</strong> penaliza más los errores grandes. Ejemplo: precio real 100 €, predicción 90 € → error² = 100.</li><li><strong>Cross-Entropy (clasificación):</strong> evalúa si la probabilidad asignada a la clase correcta es alta. Con probabilidades gato 0,85, perro 0,10 y ave 0,05, si la clase correcta recibe poca probabilidad, la pérdida aumenta.</li><li><strong>Backpropagation:</strong> la red calcula la pérdida al final y aplica la regla de la cadena hacia atrás (∂L/∂ŷ, ∂L/∂z, ∂L/∂w) para saber cuánto contribuye cada parámetro al error.</li><li><strong>Regla de la cadena:</strong> \(\frac{\partial L}{\partial w}=\frac{\partial L}{\partial z}\cdot\frac{\partial z}{\partial w}\), es decir, gradiente que llega × efecto del peso = responsabilidad de ese peso en la pérdida.</li><li><strong>Ciclo:</strong> predicción → calcular pérdida → propagar gradientes → actualizar pesos.</li></ul><div class="idea">Objetivo: reducir L ajustando los pesos en la dirección que disminuye el error.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/29_funciones_perdida_backpropagation.webp" data-cap="Infografía 29: Funciones de pérdida y backpropagation" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/29_funciones_perdida_backpropagation.webp" alt="Funciones de pérdida y backpropagation" width="941" height="1672"><span>Ampliar infografía 29</span></a></div>
+      </div>
+    </div>
   </div>
 
   <div class="concept" id="optimizadores">
@@ -321,6 +392,13 @@
       <span class="tag">Adagrad</span><span class="tag">RMSprop</span><span class="tag">AdamW</span><span class="tag">Learning rate scheduling</span>
     </div>
     <p><a href="optimizadores.html">Ver la píldora completa: de SGD vanilla a Adam, con fórmulas, código y cuándo usar cada uno &rarr;</a></p>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>SGD</strong> oscila en valles estrechos; <strong>Momentum</strong> acumula dirección y reduce las oscilaciones, con una trayectoria más suave y rápida.</li><li><strong>Vanishing gradient:</strong> en redes profundas, gradientes repetidamente pequeños hacen que las primeras capas aprendan muy despacio. No es solo un problema del optimizador: también influyen la inicialización, las activaciones y la arquitectura.</li><li><strong>Momentum</strong> promedia la dirección de gradientes pasados; <strong>RMSProp</strong> escala cada parámetro con una media de gradientes al cuadrado y adapta el tamaño del paso.</li><li><strong>Adam</strong> combina ambas ideas: primer momento \(m_t=\beta_1 m_{t-1}+(1-\beta_1)g_t\) (dirección) y segundo momento \(v_t=\beta_2 v_{t-1}+(1-\beta_2)g_t^2\) (escala).</li></ul><div class="idea">Adam puede mejorar las actualizaciones, pero no elimina por sí solo el vanishing gradient. Para mitigarlo: ReLU/GELU, inicialización adecuada, conexiones residuales y normalización.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/30_optimizadores_sgd_momentum_adam.webp" data-cap="Infografía 30: Optimizadores: de SGD con momentum a Adam" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/30_optimizadores_sgd_momentum_adam.webp" alt="Optimizadores: de SGD con momentum a Adam" width="941" height="1672"><span>Ampliar infografía 30</span></a></div>
+      </div>
+    </div>
   </div>
 
   <div class="concept" id="entrenamiento-anns">
@@ -332,6 +410,13 @@
       <tr><td>Early Stopping</td><td>Callback que detiene el entrenamiento cuando la métrica de validación deja de mejorar, evitando sobreentrenar.</td></tr>
       <tr><td>Dropout</td><td>Apaga aleatoriamente un porcentaje de neuronas en cada paso de entrenamiento, forzando a la red a no depender de neuronas específicas y así generalizar mejor.</td></tr>
     </table>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>Época</strong> = una pasada completa por todos los datos de entrenamiento. <strong>Batch</strong> = un grupo de ejemplos procesados antes de actualizar los pesos; una época se compone de varios batches.</li><li><strong>Early stopping (callback):</strong> detiene el entrenamiento si la pérdida de validación deja de mejorar, evitando el sobreajuste, y guarda los mejores pesos.</li><li><strong>Dropout:</strong> durante el entrenamiento desactiva aleatoriamente algunas neuronas; en inferencia se usa la red completa.</li></ul><div class="idea">Más epochs no siempre es mejor: valida para detectar el sobreajuste. Early stopping y dropout ayudan a generalizar.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/31_entrenamiento_redes_neuronales_epochs_early_stopping_dropout.webp" data-cap="Infografía 31: Entrenamiento de redes neuronales: épocas, batches, early stopping y dropout" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/31_entrenamiento_redes_neuronales_epochs_early_stopping_dropout.webp" alt="Entrenamiento de redes neuronales: épocas, batches, early stopping y dropout" width="941" height="1672"><span>Ampliar infografía 31</span></a></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -344,6 +429,13 @@
     <div class="tag-row">
       <span class="tag">Capa convolucional</span><span class="tag">Pooling</span><span class="tag">Mapas de características</span>
     </div>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>Por qué falla el MLP:</strong> aplanar la imagen pierde la vecindad entre píxeles, y millones de entradas pueden disparar el número de parámetros.</li><li><strong>Filtros / kernels:</strong> un filtro de 3×3 detecta patrones locales como bordes y texturas, y los mismos pesos se reutilizan en toda la imagen.</li><li><strong>Stride</strong> controla cuánto se mueve el filtro (paso 1 o 2); <strong>padding</strong> añade un borde para controlar el tamaño de la salida.</li><li><strong>Mapas de características:</strong> cada filtro genera un mapa que resalta una característica.</li><li><strong>Pooling:</strong> en una región 2×2 con valores 2, 5, 1 y 4, max pooling da 5 y average pooling da 3. Reduce dimensiones y aporta tolerancia a pequeños desplazamientos.</li></ul><div class="idea">CNN = patrones locales + pesos compartidos + reducción espacial.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/23_redes_convolucionales_cnn.webp" data-cap="Infografía 23: Redes convolucionales: por qué el MLP falla en imágenes" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/23_redes_convolucionales_cnn.webp" alt="Redes convolucionales: por qué el MLP falla en imágenes" width="941" height="1672"><span>Ampliar infografía 23</span></a></div>
+      </div>
+    </div>
   </div>
 
   <div class="concept" id="transfer-learning">
@@ -352,6 +444,13 @@
     <div class="compare">
       <div class="col"><h4>Feature Extraction</h4><p>Se "congelan" (no se actualizan) los pesos de las capas base ya entrenadas, y solo se entrena una nueva capa final adaptada a la tarea propia. Rápido y necesita pocos datos.</p></div>
       <div class="col"><h4>Fine-Tuning</h4><p>Además de entrenar la nueva capa final, se permite ajustar (con una tasa de aprendizaje baja) también algunas de las capas base, adaptándolas mejor a la tarea específica cuando hay más datos disponibles.</p></div>
+    </div>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>Idea clave:</strong> una red aprende patrones generales (bordes, formas y texturas) con millones de imágenes, por ejemplo ImageNet, y se reutilizan esos conocimientos en una tarea específica con pocas etiquetas.</li><li><strong>Feature extraction (congelar):</strong> se mantiene fija la base (backbone) y se entrena solo la cabeza (head). Ideal con pocos datos y recursos limitados.</li><li><strong>Fine-tuning (descongelar):</strong> se descongelan algunas capas (o toda la base) y se entrena con una tasa de aprendizaje muy baja. Por ejemplo, 1e-5 en la base y 1e-3 en la cabeza, según el modelo.</li><li>Feature extraction es más rápido y con menos riesgo de sobreajuste; fine-tuning es más adaptable, pero requiere más cuidado.</li></ul><div class="idea">Regla práctica: empieza congelando; después prueba fine-tuning si necesitas mejorar.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/32_transfer_learning_feature_extraction_fine_tuning.webp" data-cap="Infografía 32: Transfer learning: feature extraction y fine-tuning" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/32_transfer_learning_feature_extraction_fine_tuning.webp" alt="Transfer learning: feature extraction y fine-tuning" width="941" height="1672"><span>Ampliar infografía 32</span></a></div>
+      </div>
     </div>
   </div>
 
@@ -369,6 +468,13 @@
         <text x="95" y="30" fill="var(--accent)" font-size="10" text-anchor="middle">objeto detectado</text>
       </svg>
     </div>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body">
+        <div class="txt"><ul class="pts"><li><strong>Enfoque clásico de dos etapas:</strong> un RPN propone regiones y un clasificador asigna clases y refina cajas; varias pasadas implican más latencia. <strong>YOLO (single-shot):</strong> una sola pasada que predice cajas delimitadoras, clases y confianza, con detección unificada y baja latencia.</li><li><strong>Arquitectura YOLOv11+:</strong> <em>backbone</em> (C3k2 para extracción eficiente de características; C2PSA para atención espacial) → <em>neck</em> (PAN/FPN para fusión multiescala; SPPF para contexto ampliado) → <em>head</em> (cajas + clases; segmentación o pose según la variante).</li><li><strong>Frontera de Pareto velocidad vs. precisión:</strong> la variante Nano es la más rápida, Medium es la equilibrada y Extra Large ofrece la mayor precisión. Los resultados dependen del hardware, el dataset y la configuración.</li><li><strong>Por qué destaca:</strong> tiempo real, detección multiescala y variantes para edge y servidor.</li></ul><div class="idea">Elige el modelo según el equilibrio entre latencia, precisión y recursos.</div></div>
+        <div class="figs"><a class="fig" href="info/infografias/21_deteccion_objetos_yolov11.webp" data-cap="Infografía 21: Detección de objetos con YOLOv11+" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/21_deteccion_objetos_yolov11.webp" alt="Detección de objetos con YOLOv11+" width="941" height="1672"><span>Ampliar infografía 21</span></a></div>
+      </div>
+    </div>
   </div>
 
   <div class="concept" id="arquitecturas-modernas">
@@ -380,12 +486,29 @@
       <tr><td>MobileNet</td><td>Convoluciones separables en profundidad que reducen drásticamente los cálculos.</td><td>Inferencia en dispositivos móviles o con recursos limitados.</td></tr>
     </table>
     <p class="dim">Las tres se usan comúnmente como base para transfer learning en tareas de visión propias, en vez de partir de cero.</p>
+    <div class="refuerzo">
+      <h4>Infografía de refuerzo</h4>
+      <div class="body stack">
+        <div class="txt"><ul class="pts"><li><strong>ResNet:</strong> la conexión de atajo (skip connection) permite que la entrada <em>x</em> evite las capas convolucionales y se sume a la salida: <code>y = F(x) + x</code>. Facilita el flujo del gradiente y el entrenamiento de redes profundas.</li><li><strong>Backbones:</strong> ResNet usa bloques residuales; EfficientNet escala conjuntamente profundidad, anchura y resolución; MobileNet usa convoluciones separables en profundidad (depthwise + pointwise) con menos parámetros y cómputo.</li><li><strong>Transfer learning con YOLO11+:</strong> cargar pesos preentrenados (por ejemplo, COCO) → preparar el dataset y el archivo <code>data.yaml</code> → ajustar el modelo a tus clases y entrenar → evaluar y exportar para despliegue.</li></ul><pre class="code"><code>from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")
+results = model.train(
+    data="custom_dataset.yaml",
+    epochs=50,
+    imgsz=640,
+    device=0,
+)
+model.export(format="onnx")</code></pre><p class="dim">Usa <code>device="cpu"</code> si no dispones de una GPU CUDA. Congelar el backbone es opcional y no siempre necesario.</p><div class="scroll"><table class="cmp"><tr><th>Modelo</th><th>Cuándo elegirlo</th></tr><tr><td>ResNet</td><td>Aprendizaje profundo y baseline sólido.</td></tr><tr><td>MobileNet</td><td>Dispositivos con recursos limitados.</td></tr><tr><td>EfficientNet</td><td>Equilibrio entre precisión y eficiencia.</td></tr></table></div><div class="idea">Pipeline: datos etiquetados → entrenamiento (ajuste fino) → validación → despliegue.</div></div>
+        <div class="figs row"><a class="fig" href="info/infografias/26_arquitecturas_vision_resnet_efficientnet_mobilenet_yolo_v1.webp" data-cap="Infografía 26 (versión 1): Arquitecturas modernas de visión artificial, versión 1" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/26_arquitecturas_vision_resnet_efficientnet_mobilenet_yolo_v1.webp" alt="Arquitecturas modernas de visión artificial, versión 1" width="941" height="1672"><span>Ampliar infografía 26 (versión 1)</span></a><a class="fig" href="info/infografias/33_arquitecturas_vision_resnet_efficientnet_mobilenet_yolo_v2.webp" data-cap="Infografía 33 (versión 2): Arquitecturas modernas de visión artificial, versión 2" target="_blank" rel="noopener"><img loading="lazy" src="info/infografias/33_arquitecturas_vision_resnet_efficientnet_mobilenet_yolo_v2.webp" alt="Arquitecturas modernas de visión artificial, versión 2" width="941" height="1672"><span>Ampliar infografía 33 (versión 2)</span></a></div>
+      </div>
+    </div>
   </div>
 </section>
 
     <div class="footnav">
       <a href="index.html">&larr; Volver al índice general</a>
       <a href="modulo3.html">&larr; Modulo3</a>
+      <a href="modulo5.html">Siguiente: Módulo 5 &rarr;</a>
     </div>
   </main>
 </div>
@@ -416,6 +539,55 @@
       ]
     });
   });
+</script>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Infografía ampliada">
+  <div class="bar">
+    <span class="cap" id="lbCap"></span>
+    <button type="button" id="lbPrev" aria-label="Anterior">&larr;</button>
+    <button type="button" id="lbNext" aria-label="Siguiente">&rarr;</button>
+    <a class="open" id="lbOpen" target="_blank" rel="noopener">Abrir imagen</a>
+    <button type="button" id="lbClose" aria-label="Cerrar">Cerrar</button>
+  </div>
+  <img id="lbImg" alt="">
+</div>
+<script>
+  (function(){
+    var figs = [].slice.call(document.querySelectorAll('a.fig'));
+    if(!figs.length) return;
+    var lb = document.getElementById('lb'), img = document.getElementById('lbImg'),
+        cap = document.getElementById('lbCap'), open = document.getElementById('lbOpen'),
+        idx = 0, last = null;
+    function show(i){
+      idx = (i + figs.length) % figs.length;
+      var a = figs[idx];
+      img.src = a.getAttribute('href');
+      img.alt = a.querySelector('img').alt;
+      cap.textContent = a.getAttribute('data-cap');
+      open.href = a.getAttribute('href');
+      lb.hidden = false;
+      lb.scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+    }
+    function close(){
+      lb.hidden = true;
+      img.removeAttribute('src');
+      document.body.style.overflow = '';
+      if(last) last.focus();
+    }
+    figs.forEach(function(a, i){
+      a.addEventListener('click', function(e){ e.preventDefault(); last = a; show(i); document.getElementById('lbClose').focus(); });
+    });
+    document.getElementById('lbClose').addEventListener('click', close);
+    document.getElementById('lbPrev').addEventListener('click', function(){ show(idx - 1); });
+    document.getElementById('lbNext').addEventListener('click', function(){ show(idx + 1); });
+    lb.addEventListener('click', function(e){ if(e.target === lb) close(); });
+    document.addEventListener('keydown', function(e){
+      if(lb.hidden) return;
+      if(e.key === 'Escape') close();
+      else if(e.key === 'ArrowLeft') show(idx - 1);
+      else if(e.key === 'ArrowRight') show(idx + 1);
+    });
+  })();
 </script>
 </body>
 </html>
